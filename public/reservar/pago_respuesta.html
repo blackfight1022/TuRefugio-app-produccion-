@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estado del pago - Tu Refugio</title>
+  <link rel="stylesheet" href="reservar.css">
+  <style>
+    .respuesta-pago {
+      max-width: 820px;
+    }
+
+    .estado-card,
+    .factura-card {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 16px;
+      background: #f5fbfc;
+      border: 1px solid #d5e8ec;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+      text-align: left;
+    }
+
+    .estado-card h2,
+    .factura-card h2 {
+      color: #16515b;
+      margin-bottom: 10px;
+    }
+
+    .estado-pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #dceef2;
+      color: #15505a;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    .factura-card ul {
+      padding-left: 20px;
+      list-style: disc;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="login respuesta-pago">
+      <h1>Estado de tu pago</h1>
+      <div id="estadoPago" class="estado-card">
+        <p>Estamos consultando el estado de tu reserva y tu pago.</p>
+      </div>
+      <div id="facturaEmitida" class="factura-card" hidden>
+        <h2>Factura electrónica</h2>
+        <div id="facturaContenido"></div>
+      </div>
+    </section>
+  </main>
+  <script src="pago_respuesta.js"></script>
+</body>
+</html>

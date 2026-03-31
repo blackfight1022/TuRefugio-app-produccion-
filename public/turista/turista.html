@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Perfil del Turista - Tu Refugio</title>
+  <link rel="stylesheet" href="turista.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="titulo-con-logo">
+      <img src="logo.png" alt="Logo de Tu Refugio" class="logo-principal">
+      <h1 class="titulo-principal">Bienvenido a Tu Refugio</h1>
+    </div>
+
+    <nav class="nav-centered">
+      <ul class="menu">
+        <li><a href="../index.html">Inicio</a></li>
+        <li><a href="#">Explorar Alojamientos</a>
+          <ul>
+            <li><a href="../explorar_alojamientos_fichas_detalle/explorar.html">Ficha Detalle</a></li>
+            <li><a href="../reservar/reservar.html">Reservar</a></li>
+            <li><a href="../calificar_reseñar/calificar.html">Calificar / Reseñar</a></li>
+          </ul>
+        </li>
+        <li><a href="#">Mi Cuenta</a>
+          <ul>
+            <li><a href="#" onclick="mostrarPanel('bienvenida')">Panel Principal</a></li>
+            <li><a href="#" onclick="mostrarPanel('perfil')">Perfil</a></li>
+            <li><a href="#" onclick="mostrarPanel('historial')">Historial de Reservas</a></li>
+            <li><a href="#" onclick="mostrarPanel('gestion-reservas')">Gestionar Reservas</a></li>
+            <li><a href="#" onclick="mostrarPanel('mensajeria')">Mensajería</a></li>
+            <li><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="contenedor-principal">
+    <!-- Panel Bienvenida -->
+    <section id="panel-bienvenida" class="panel activo">
+      <h1>Hola, Turista 👋</h1>
+      <p>Explora alojamientos y planifica tu próxima aventura.</p>
+
+      <section class="collage-alojamientos">
+        <h2>Alojamientos Favoritos</h2>
+        <div class="galeria" id="galeria-favoritos">
+          <!-- Se cargará dinámicamente -->
+        </div>
+      </section>
+    </section>
+
+    <!-- Panel Perfil -->
+    <section id="panel-perfil" class="panel">
+      <h2>👤 Mi Perfil</h2>
+      <div class="perfil-contenedor">
+        <div class="perfil-datos" id="perfil-datos">
+          <!-- Se cargará dinámicamente -->
+        </div>
+        <button onclick="editarPerfil()" class="btn-primario">✏️ Editar Perfil</button>
+      </div>
+
+      <!-- Cuadrante cambio de contraseña -->
+      <div class="card-cambiar-contrasena">
+        <h3 class="card-contrasena-titulo">🔒 Cambiar Contraseña <span class="badge-opcional">Opcional</span></h3>
+        <p class="card-contrasena-desc">Si deseas actualizar tu contraseña de acceso, completa los campos a continuación.</p>
+        <form id="form-cambiar-contrasena" class="form-cambiar-contrasena-grid" onsubmit="cambiarContrasena(event)">
+          <div class="form-contrasena-campo">
+            <label for="cp-actual">Contraseña actual</label>
+            <input type="password" id="cp-actual" placeholder="Tu contraseña actual" autocomplete="current-password" required>
+          </div>
+          <div class="form-contrasena-campo">
+            <label for="cp-nueva">Nueva contraseña</label>
+            <input type="password" id="cp-nueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+          </div>
+          <div class="form-contrasena-campo">
+            <label for="cp-confirmar">Confirmar nueva contraseña</label>
+            <input type="password" id="cp-confirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password" required>
+          </div>
+          <div class="form-contrasena-accion">
+            <p id="cp-feedback" class="cp-feedback" style="display:none;"></p>
+            <button type="submit" class="btn-primario">Actualizar Contraseña</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Panel Historial de Reservas -->
+    <section id="panel-historial" class="panel">
+      <h2>📅 Historial de Reservas</h2>
+      <div id="historial-contenedor" class="historial-contenedor">
+        <!-- Se cargará dinámicamente -->
+      </div>
+    </section>
+
+    <!-- Panel Gestión de Reservas -->
+    <section id="panel-gestion-reservas" class="panel">
+      <h2>🔄 Gestionar mis Reservas</h2>
+      <div class="chat-contenedor">
+        <div id="chatbot-turista" class="chatbot">
+          <div class="chat-header">
+            <h3>Asistente de Cancelación de Reservas</h3>
+            <button onclick="cerrarChatbot()" class="btn-cerrar">✕</button>
+          </div>
+          <div id="chat-mensajes-turista" class="chat-mensajes">
+            <div class="mensaje bot">
+              <p>¡Hola! Soy tu asistente. Para ayudarte a cancelar una reserva, necesito el correo con el que realizaste la reserva. 📧</p>
+            </div>
+          </div>
+          <div class="chat-input">
+            <input type="email" id="email-turista" placeholder="Ingresa tu correo..." />
+            <button onclick="enviarCorreoTurista()" class="btn-enviar">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel Mensajería -->
+    <section id="panel-mensajeria" class="panel">
+      <h2>💬 Mensajería</h2>
+      <div id="mensajes-contenedor" class="mensajes-contenedor">
+        <!-- Se cargará dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal para confirmación de cancelación -->
+  <div id="modal-confirmacion" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirmar Cancelación de Reserva</h3>
+        <button onclick="cerrarModal('modal-confirmacion')" class="btn-cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Se ha enviado un código de confirmación a tu correo. Por favor, ingrésalo aquí:</p>
+        <p id="codigo-demo-aviso" style="display:none; margin-bottom:10px; padding:10px 14px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; font-weight:600; color:#856404;"></p>
+        <input type="text" id="codigo-confirmacion-turista" placeholder="Código de confirmación" maxlength="6" />
+        <p id="motivo-cancelacion-display" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px;"></p>
+      </div>
+      <div class="modal-footer">
+        <button onclick="cerrarModal('modal-confirmacion')" class="btn-secundario">Cancelar</button>
+        <button onclick="confirmarCodigoTurista()" class="btn-primario">Confirmar Código</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para edición de perfil -->
+  <div id="modal-editar-perfil" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Editar Perfil</h3>
+        <button onclick="cerrarModal('modal-editar-perfil')" class="btn-cerrar">✕</button>
+      </div>
+      <form id="form-editar-perfil">
+        <div class="modal-body">
+          <label for="perfil-nombre">Nombre</label>
+          <input type="text" id="perfil-nombre" required>
+
+          <label for="perfil-correo">Correo (no editable)</label>
+          <input type="email" id="perfil-correo" readonly disabled>
+
+          <label for="perfil-telefono">Teléfono</label>
+          <input type="text" id="perfil-telefono">
+
+          <label for="perfil-tipo-documento">Tipo de Documento</label>
+          <input type="text" id="perfil-tipo-documento" placeholder="CC, CE, PP, NIT">
+
+          <label for="perfil-numero-documento">Número de Documento</label>
+          <input type="text" id="perfil-numero-documento">
+
+          <label for="perfil-direccion">Dirección</label>
+          <input type="text" id="perfil-direccion">
+
+          <div class="seccion-contrasena">
+            <h4 class="titulo-seccion-opcional">🔒 Cambiar Contraseña <span class="badge-opcional">Opcional</span></h4>
+
+            <label for="perfil-contrasena-actual">Contraseña Actual</label>
+            <input type="password" id="perfil-contrasena-actual" placeholder="Ingresa tu contraseña actual" autocomplete="current-password">
+
+            <label for="perfil-contrasena-nueva">Nueva Contraseña</label>
+            <input type="password" id="perfil-contrasena-nueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+
+            <label for="perfil-contrasena-confirmar">Confirmar Nueva Contraseña</label>
+            <input type="password" id="perfil-contrasena-confirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password">
+          </div>
+
+          <p id="perfil-feedback" class="perfil-feedback" style="display:none;"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="cerrarModal('modal-editar-perfil')" class="btn-secundario">Cancelar</button>
+          <button type="submit" class="btn-primario">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <script src="turista.js"></script>
+</body>
+</html>

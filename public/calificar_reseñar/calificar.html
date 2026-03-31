@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reseñar - Tu Refugio</title>
+  <link rel="stylesheet" href="calificar.css" />
+</head>
+<body>
+  <header>
+    <div class="titulo-con-logo">
+      <img src="logo.png" alt="Logo de Tu Refugio" class="logo-principal">
+      <h1 class="titulo-principal">Tu Refugio</h1>
+    </div>
+    <nav class="nav-centered">
+      <ul class="menu">
+        <li><a href="../index.html">Inicio</a></li>
+        <li><a href="#">Registro</a>
+          <ul>
+            <li><a href="../registro_turista/turista.html">Turista</a></li>
+            <li><a href="../registro_anfitrion/anfitrion.html">Anfitrión</a></li>
+          </ul>
+        </li>
+        <li><a href="../login/login.html">Iniciar Sesión</a></li>
+        <li><a href="#">Explorar Alojamientos</a>
+          <ul>
+            <li><a href="../explorar_alojamientos_fichas_detalle/explorar.html">Ficha Detalle</a></li>
+           
+          </ul>
+        </li>
+        
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="login">
+      <h1>Calificar y Reseñar</h1>
+      <form id="formResena">
+        <label for="correo">Correo registrado en la reserva</label>
+        <input type="email" id="correo" required />
+
+        <p id="reservaDetectada" style="margin-top: 2px; font-size: 0.95rem;"></p>
+
+        <label for="calificacion">Calificación</label>
+        <select id="calificacion" name="calificacion" required>
+          <option value="">Selecciona una opción</option>
+          <option value="5">⭐⭐⭐⭐⭐</option>
+          <option value="4">⭐⭐⭐⭐</option>
+          <option value="3">⭐⭐⭐</option>
+          <option value="2">⭐⭐</option>
+          <option value="1">⭐</option>
+        </select>
+
+        <label for="comentario">Comentario</label>
+        <textarea id="comentario" rows="4" placeholder="Cuéntanos tu experiencia..." required></textarea>
+
+        <p id="estadoValidacion" style="margin-top:10px;"></p>
+
+        <button type="submit" id="btnEnviarResena" disabled>Enviar Reseña</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p></p>
+    </div>
+  </footer>
+  <script src="calificar.js"></script>
+</body>
+</html>

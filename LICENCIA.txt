@@ -1,0 +1,23 @@
+LICENCIA DE USO - SOFTWARE "TU REFUGIO"
+
+Autor: Jesus Andres Cabrejo Cuervo
+CC: 1.116.043.410
+Ano: 2026
+Pais: Colombia
+
+Este software se encuentra protegido por las disposiciones de la Ley 23 de 1982, la Ley 44 de 1993 y la Decision Andina 351 de 1993.
+
+Todos los derechos morales y patrimoniales sobre el presente software pertenecen exclusivamente al autor.
+
+SE PROHIBE EXPRESAMENTE:
+
+1. La reproduccion total o parcial del codigo fuente.
+2. La modificacion, adaptacion o creacion de obras derivadas.
+3. La distribucion, sublicenciamiento o comercializacion.
+4. El uso con fines comerciales o academicos sin autorizacion.
+
+Cualquier uso no autorizado constituira una infraccion a los derechos de autor y dara lugar a las acciones civiles y penales correspondientes conforme a la legislacion colombiana.
+
+Para solicitar permisos de uso, contactar al autor.
+
+(c) 2026 Jesus Andres Cabrejo Cuervo CC: 1.116.043.410 - Todos los derechos reservados.

@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle Alojamiento - Tu Refugio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="detalles.css">
+  <style>
+    :root {
+      --primary: #007b8a;
+      --text: #2c3e50;
+      --white: #cfd8dc;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --radius: 16px;
+      --font: 'Montserrat', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--white);
+    }
+
+    .header {
+      background: var(--primary);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 90px;
+    }
+
+    .header-left {
+      position: absolute;
+      left: 20px;
+    }
+
+    .logo-img {
+      width: 99px;
+      height: 99px;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+
+    .header-center h1 {
+      color: white;
+      font-size: 26px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .btn-volver {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 123, 138, 0.35);
+      text-decoration: none;
+      color: #007b8a;
+      font-weight: 600;
+      transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-volver:hover {
+      background-color: rgba(0, 123, 138, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 123, 138, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .link-como-llegar,
+    .link-whatsapp {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .link-como-llegar {
+      color: #007b8a;
+      border: 1px solid rgba(0, 123, 138, 0.35);
+    }
+
+    .link-como-llegar:hover {
+      background-color: rgba(0, 123, 138, 0.12);
+      box-shadow: 0 2px 8px rgba(0, 123, 138, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .link-whatsapp {
+      color: #128c7e;
+      border: 1px solid rgba(18, 140, 126, 0.35);
+    }
+
+    .link-whatsapp:hover {
+      background-color: rgba(18, 140, 126, 0.12);
+      box-shadow: 0 2px 8px rgba(18, 140, 126, 0.2);
+      transform: translateY(-1px);
+    }
+
+    #ubicacion,
+    #contacto {
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    #galeria {
+      margin-top: 16px;
+    }
+
+    #galeria img,
+    #habitaciones .hab-imagenes img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      margin: 5px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    #galeria img:hover,
+    #habitaciones .hab-imagenes img:hover {
+      transform: translateY(-2px) scale(1.02);
+      border-color: #007b8a;
+      box-shadow: 0 8px 18px rgba(0, 123, 138, 0.25);
+    }
+
+    iframe {
+      margin-top: 15px;
+      border-radius: 10px;
+      border: 0;
+    }
+
+    .filtros-container {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f6fafb;
+      border: 1px solid #e3eef1;
+      text-align: left;
+    }
+
+    .filtros-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .filtro-item label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .filtro-item input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #c9d7dc;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+
+    .btn-filtrar,
+    .btn-limpiar,
+    .btn {
+      margin-top: 12px;
+      margin-right: 8px;
+      padding: 10px 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .bloque-politicas-reserva {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid #d8e9ed;
+      border-radius: 10px;
+      background: #f4fbfc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      text-align: center;
+    }
+
+    .check-politicas-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f4d57;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .check-politicas-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #007b8a;
+      cursor: pointer;
+    }
+
+    .btn-checklist-politicas {
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid rgba(0, 123, 138, 0.5);
+      border-radius: 8px;
+      background: #e8f5f7;
+      color: #0d5964;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .grid-habitaciones {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .card-hab {
+      background: #f5f6fa;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: left;
+      border: 2px solid transparent;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .card-hab:hover,
+    .card-hab.seleccionada {
+      border-color: #007b8a;
+      box-shadow: 0 8px 18px rgba(0, 123, 138, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .card-hab h4 {
+      margin-bottom: 6px;
+    }
+
+    .card-hab p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    #habitaciones .hab-imagenes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+
+    .panel-servicios {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #e4ecef;
+      background: #f8fbfc;
+      text-align: left;
+    }
+
+    .panel-servicios h3 {
+      margin-bottom: 12px;
+      color: #1f4d57;
+    }
+
+    .servicios-filtros {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .servicios-filtros input,
+    .servicios-filtros select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #c9d7dc;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+
+    .servicios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .servicio-card {
+      background: #fff;
+      border: 1px solid #dce8ec;
+      border-radius: 10px;
+      padding: 10px;
+      transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .servicio-card:hover {
+      border-color: #007b8a;
+      box-shadow: 0 8px 18px rgba(0, 123, 138, 0.14);
+      transform: translateY(-2px);
+    }
+
+    .servicio-card h4 {
+      margin-bottom: 6px;
+      color: #23444d;
+      font-size: 15px;
+    }
+
+    .servicio-card p {
+      margin: 3px 0;
+      font-size: 14px;
+      color: #40616a;
+    }
+
+    .servicio-opcion {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid #edf3f5;
+    }
+
+    .servicio-opcion:first-of-type {
+      border-top: 0;
+    }
+
+    .servicio-opcion label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .resumen-reserva {
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eef8fa;
+      border: 1px solid #cfe7eb;
+      text-align: left;
+    }
+
+    .resumen-reserva h3 {
+      margin-bottom: 8px;
+      color: #1f4d57;
+    }
+
+    .resumen-reserva p {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    .btn-seleccionar-habitacion {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #007b8a;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-seleccionar-habitacion:hover {
+      background: #0099ab;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0, 123, 138, 0.22);
+    }
+
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .lightbox img {
+      max-width: 80%;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <img src="logo.png" alt="Logo Tu Refugio" class="logo-img">
+    </div>
+    <div class="header-center">
+      <h1>Tu Refugio</h1>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <a href="/explorar_alojamientos_fichas_detalle/explorar.html" class="btn-volver">← Volver a explorar</a>
+
+      <h2 id="titulo">Cargando...</h2>
+      <p id="ubicacion"></p>
+      <p id="contacto"></p>
+
+      <div id="galeria"></div>
+
+      <iframe id="mapa" width="100%" height="250"></iframe>
+
+      <div class="filtros-container">
+        <h3>🔍 Filtrar Habitaciones</h3>
+        <div class="filtros-grid">
+          <div class="filtro-item">
+            <label for="filtro-capacidad">👥 Capacidad (personas):</label>
+            <input type="number" id="filtro-capacidad" placeholder="Min. personas" min="1">
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-precio-min">💰 Precio mínimo:</label>
+            <input type="number" id="filtro-precio-min" placeholder="Desde $" min="0">
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-precio-max">💰 Precio máximo:</label>
+            <input type="number" id="filtro-precio-max" placeholder="Hasta $" min="0">
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-servicios">🛎️ Servicios:</label>
+            <input type="text" id="filtro-servicios" placeholder="Ej: wifi, tv">
+          </div>
+        </div>
+        <button id="btnFiltrar" class="btn-filtrar">🔎 Filtrar</button>
+        <button id="btnLimpiar" class="btn-limpiar">🔄 Limpiar</button>
+      </div>
+
+      <div id="habitaciones" class="grid-habitaciones"></div>
+
+      <div class="panel-servicios">
+        <h3>🧩 Servicios disponibles bajo solicitud</h3>
+        <div class="servicios-filtros">
+          <input id="filtro-servicio-texto" type="text" placeholder="Buscar por nombre o palabra clave">
+          <select id="filtro-servicio-categoria">
+            <option value="">Todas las categorías</option>
+          </select>
+          <input id="filtro-servicio-valor-min" type="number" min="0" placeholder="Valor mínimo">
+          <input id="filtro-servicio-valor-max" type="number" min="0" placeholder="Valor máximo">
+        </div>
+        <div id="listaServiciosAlojamiento" class="servicios-grid"></div>
+      </div>
+
+      <div id="resumenReserva" class="resumen-reserva"></div>
+
+      <button class="btn" onclick="irReserva()">Reservar</button>
+      <div class="bloque-politicas-reserva">
+        <label for="aceptaPoliticasReserva" class="check-politicas-label">
+          <input type="checkbox" id="aceptaPoliticasReserva">
+          He leido y acepto las politicas de reserva y cancelacion.
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:3000/api";
+    const id = new URLSearchParams(window.location.search).get("id");
+
+    let habitacionesGlobal = [];
+    let serviciosAlojamientoGlobal = [];
+    const cacheServiciosHabitacion = new Map();
+    let alojamientoActual = null;
+    let habitacionSeleccionada = null;
+    let serviciosSeleccionados = [];
+
+    const CATEGORIAS_SERVICIOS = [
+      { nombre: "Conectividad y Tecnologia", keywords: ["wifi", "tv", "smart", "netflix", "streaming", "escritorio", "usb", "aire acondicionado", "calefaccion", "alexa", "google home", "cable"] },
+      { nombre: "Cocina y Alimentacion", keywords: ["cocina", "nevera", "refrigerador", "microondas", "cafetera", "tetera", "vajilla", "utensilios", "minibar", "desayuno", "room service"] },
+      { nombre: "Comodidad y Mobiliario", keywords: ["cama", "sofa", "armario", "closet", "blackout", "ropa de cama", "toallas", "almohadas", "balcon", "vista"] },
+      { nombre: "Bano y Aseo", keywords: ["bano", "ducha", "banera", "secador", "aseo", "agua caliente", "papel higienico", "lavadora", "secadora"] },
+      { nombre: "Bienestar y Relax", keywords: ["masaje", "spa", "jacuzzi", "sauna", "piscina", "gimnasio", "aromaterapia"] },
+      { nombre: "Mascotas", keywords: ["mascota", "pet", "comedero", "cama para mascotas", "cuidado"] },
+      { nombre: "Seguridad", keywords: ["cerradura", "caja fuerte", "camara", "detector de humo", "extintor", "recepcion"] },
+      { nombre: "Transporte y Acceso", keywords: ["parqueadero", "check-in", "aeropuerto", "bicicleta", "discapacitados", "ascensor"] },
+      { nombre: "Limpieza y Servicios Incluidos", keywords: ["limpieza", "sabanas", "lavanderia", "plancha"] },
+      { nombre: "Entretenimiento", keywords: ["videojuego", "juegos", "libros", "bbq"] }
+    ];
+
+    function normalizarTexto(texto) {
+      return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+
+    function detectarCategoriaServicio(nombreServicio) {
+      const nombre = normalizarTexto(nombreServicio);
+      for (const categoria of CATEGORIAS_SERVICIOS) {
+        if (categoria.keywords.some((kw) => nombre.includes(normalizarTexto(kw)))) {
+          return categoria.nombre;
+        }
+      }
+      return "General";
+    }
+
+    function obtenerValorServicio(servicio) {
+      const valor = servicio?.valor_adicional ?? servicio?.valor ?? servicio?.precio ?? servicio?.costo ?? null;
+      const num = Number(valor);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function descomponerUbicacion(ubicacionRaw) {
+      const raw = String(ubicacionRaw || "").trim();
+      const linkMatch = raw.match(/https?:\/\/[^\s]+/i);
+      const linkGPS = linkMatch ? linkMatch[0].replace(/,+$/, "") : "";
+
+      const textoSinLink = linkMatch
+        ? raw.replace(linkMatch[0], "").replace(/^[,\s]+|[,\s]+$/g, "")
+        : raw;
+
+      const textos = textoSinLink
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .filter((p) => !/^lat\s*:/i.test(p) && !/^lng\s*:/i.test(p))
+        .filter((p) => !/^-?\d+(\.\d+)?$/.test(p));
+
+      const ciudad = textos[0] || "";
+      const region = textos[1] || "";
+      const direccion = textos.slice(2).join(", ");
+
+      return {
+        ciudad,
+        region,
+        direccion,
+        linkGPS,
+        ubicacionCorta: [ciudad, region].filter(Boolean).join(", ")
+      };
+    }
+
+    function obtenerDestinoNavegacion(infoUbicacion) {
+      if (infoUbicacion.linkGPS) {
+        try {
+          const url = new URL(infoUbicacion.linkGPS);
+          const q = url.searchParams.get("q") || url.searchParams.get("query");
+          if (q) return q;
+        } catch (_) {
+          const match = infoUbicacion.linkGPS.match(/q=([^&]+)/i);
+          if (match && match[1]) return decodeURIComponent(match[1]);
+        }
+      }
+
+      return [infoUbicacion.ciudad, infoUbicacion.region, infoUbicacion.direccion]
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    function construirWhatsAppUrl(telefono) {
+      const digitos = String(telefono || "").replace(/\D/g, "");
+      if (!digitos) return "";
+      const numeroConPais = digitos.length === 10 ? `57${digitos}` : digitos;
+      return `https://wa.me/${numeroConPais}`;
+    }
+
+    async function cargarDetalle() {
+      const res = await fetch(API_URL + "/alojamientos");
+      const data = await res.json();
+      const a = data.find((x) => x.id == id);
+
+      if (!a) return;
+      alojamientoActual = a;
+
+      const infoUbicacion = descomponerUbicacion(a.ubicacion);
+      const destinoNavegacion = obtenerDestinoNavegacion(infoUbicacion);
+      const linkComoLlegar = destinoNavegacion
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinoNavegacion)}&travelmode=driving`
+        : "";
+
+      document.getElementById("titulo").textContent = String(a.titulo || "").toUpperCase();
+      document.getElementById("ubicacion").innerHTML = `
+        📍 ${infoUbicacion.ubicacionCorta || "Ubicacion no especificada"}
+        ${linkComoLlegar ? `<a href="${linkComoLlegar}" target="_blank" rel="noopener noreferrer" class="link-como-llegar">🧭 Como llegar</a>` : ""}
+      `;
+
+      const anfitrionRes = await fetch(API_URL + "/auth/usuarios/" + a.id_anfitrion);
+      const anfitrion = await anfitrionRes.json();
+
+      const direccionAlojamiento = infoUbicacion.direccion || anfitrion.direccion || "Direccion no especificada";
+      const telefonoAnfitrion = anfitrion.telefono || "";
+      const correoAnfitrion = anfitrion.correo || "Correo no especificado";
+      const whatsappUrl = construirWhatsAppUrl(telefonoAnfitrion);
+
+      document.getElementById("contacto").innerHTML = `
+        📍 ${direccionAlojamiento} <br>
+        📞 ${telefonoAnfitrion || "Telefono no especificado"}
+        ${whatsappUrl ? `<a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-whatsapp" title="Escribir por WhatsApp">🟢 WhatsApp</a>` : ""}
+        <br>
+        ✉️ ${correoAnfitrion}
+      `;
+
+      document.getElementById("mapa").src = destinoNavegacion
+        ? "https://www.google.com/maps?q=" + encodeURIComponent(destinoNavegacion) + "&output=embed"
+        : "";
+
+      await Promise.all([cargarGaleria(), cargarHabitaciones(), cargarServiciosAlojamiento()]);
+    }
+
+    async function cargarGaleria() {
+      const res = await fetch(API_URL + "/alojamientos/" + id + "/imagenes");
+      const imgs = await res.json();
+
+      const cont = document.getElementById("galeria");
+      cont.innerHTML = "";
+
+      imgs.forEach((i) => {
+        let ruta = i.ruta.replace(/^public[\\/]/, "").replace(/\\/g, "/");
+        const url = "http://localhost:3000/" + ruta;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.onclick = () => abrirLightbox(url);
+        cont.appendChild(img);
+      });
+    }
+
+    async function obtenerServiciosHabitacion(idHabitacion) {
+      if (cacheServiciosHabitacion.has(idHabitacion)) {
+        return cacheServiciosHabitacion.get(idHabitacion);
+      }
+
+      try {
+        const res = await fetch(API_URL + "/habitaciones/" + idHabitacion + "/servicios");
+        const servicios = res.ok ? await res.json() : [];
+        const lista = Array.isArray(servicios) ? servicios : [];
+        cacheServiciosHabitacion.set(idHabitacion, lista);
+        return lista;
+      } catch (_) {
+        return [];
+      }
+    }
+
+    async function cargarHabitaciones() {
+      const res = await fetch(API_URL + "/habitaciones/alojamiento/" + id);
+      const habs = await res.json();
+      habitacionesGlobal = Array.isArray(habs) ? habs : [];
+      await renderHabitaciones(habitacionesGlobal);
+    }
+
+    async function renderHabitaciones(habs) {
+      const cont = document.getElementById("habitaciones");
+      cont.innerHTML = "";
+
+      for (const h of habs) {
+        const serviciosHab = await obtenerServiciosHabitacion(h.id);
+        const nombresServicios = serviciosHab.length
+          ? serviciosHab.map((s) => s.nombre).join(", ")
+          : "Sin servicios asignados";
+
+        const div = document.createElement("div");
+        div.className = `card-hab${habitacionSeleccionada && habitacionSeleccionada.id === h.id ? " seleccionada" : ""}`;
+        div.innerHTML = `
+          <h4>${h.nombre}</h4>
+          <p>👥 Capacidad: ${h.capacidad} personas</p>
+          <p>💰 Valor por noche: $${Number(h.precio || 0).toLocaleString("es-CO")}</p>
+          <p>🛎️ Servicios: ${nombresServicios}</p>
+          <div id="hab-${h.id}" class="hab-imagenes"></div>
+          <button class="btn-seleccionar-habitacion" onclick="seleccionarHabitacion(${h.id}, '${String(h.nombre || '').replace(/'/g, "\\'")}', ${Number(h.precio || 0)}, ${Number(h.capacidad || 0)})">
+            ${habitacionSeleccionada && habitacionSeleccionada.id === h.id ? "✅ Habitación seleccionada" : "Seleccionar habitación"}
+          </button>
+        `;
+
+        cont.appendChild(div);
+        await cargarImgHab(h.id);
+      }
+    }
+
+    async function cargarImgHab(idHab) {
+      const res = await fetch(API_URL + "/habitaciones/" + idHab + "/imagenes");
+      const imgs = await res.json();
+      const cont = document.getElementById("hab-" + idHab);
+      if (!cont) return;
+
+      imgs.forEach((i) => {
+        let ruta = i.ruta.replace(/^public[\\/]/, "").replace(/\\/g, "/");
+        const url = "http://localhost:3000/" + ruta;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.onclick = () => abrirLightbox(url);
+        cont.appendChild(img);
+      });
+    }
+
+    async function aplicarFiltrosDetail() {
+      const capacidad = document.getElementById("filtro-capacidad").value;
+      const precioMin = document.getElementById("filtro-precio-min").value;
+      const precioMax = document.getElementById("filtro-precio-max").value;
+      const servicios = document.getElementById("filtro-servicios").value.toLowerCase().trim();
+
+      let filtradas = habitacionesGlobal.filter((hab) => {
+        if (capacidad && hab.capacidad < parseInt(capacidad, 10)) return false;
+        if (precioMin && hab.precio < parseInt(precioMin, 10)) return false;
+        if (precioMax && hab.precio > parseInt(precioMax, 10)) return false;
+        return true;
+      });
+
+      if (servicios) {
+        const terminos = servicios.split(",").map((s) => s.trim()).filter(Boolean);
+        const conServicios = [];
+
+        for (const hab of filtradas) {
+          const lista = await obtenerServiciosHabitacion(hab.id);
+          const nombres = lista.map((s) => normalizarTexto(s.nombre));
+          const coincide = terminos.some((t) => nombres.some((n) => n.includes(normalizarTexto(t))));
+          if (coincide) conServicios.push(hab);
+        }
+
+        filtradas = conServicios;
+      }
+
+      await renderHabitaciones(filtradas);
+    }
+
+    async function limpiarFiltrosDetail() {
+      document.getElementById("filtro-capacidad").value = "";
+      document.getElementById("filtro-precio-min").value = "";
+      document.getElementById("filtro-precio-max").value = "";
+      document.getElementById("filtro-servicios").value = "";
+      await renderHabitaciones(habitacionesGlobal);
+    }
+
+    function seleccionarHabitacion(idHabitacion, nombreHabitacion, precioHabitacion, capacidadHabitacion) {
+      habitacionSeleccionada = {
+        id: idHabitacion,
+        nombre: nombreHabitacion,
+        precio: Number(precioHabitacion || 0),
+        capacidad: Number(capacidadHabitacion || 0)
+      };
+      renderHabitaciones(habitacionesGlobal);
+      actualizarResumenReserva();
+    }
+
+    function inicializarFiltrosHabitaciones() {
+      const btnFiltrar = document.getElementById("btnFiltrar");
+      const btnLimpiar = document.getElementById("btnLimpiar");
+      const inputs = [
+        document.getElementById("filtro-capacidad"),
+        document.getElementById("filtro-precio-min"),
+        document.getElementById("filtro-precio-max"),
+        document.getElementById("filtro-servicios")
+      ];
+
+      if (btnFiltrar) btnFiltrar.addEventListener("click", aplicarFiltrosDetail);
+      if (btnLimpiar) btnLimpiar.addEventListener("click", limpiarFiltrosDetail);
+
+      inputs.forEach((input) => {
+        if (!input) return;
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            aplicarFiltrosDetail();
+          }
+        });
+      });
+    }
+
+    async function cargarServiciosAlojamiento() {
+      try {
+        const res = await fetch(API_URL + "/alojamientos/" + id + "/servicios-adicionales");
+        const servicios = await res.json();
+
+        serviciosAlojamientoGlobal = Array.isArray(servicios)
+          ? servicios.map((s) => ({
+              ...s,
+              categoria: s.categoria || detectarCategoriaServicio(s.nombre),
+              valorNumerico: obtenerValorServicio(s)
+            }))
+          : [];
+
+        llenarOpcionesCategorias();
+        renderServiciosAlojamiento(serviciosAlojamientoGlobal);
+        actualizarResumenReserva();
+      } catch (error) {
+        console.error(error);
+        document.getElementById("listaServiciosAlojamiento").innerHTML = "<p>No fue posible cargar servicios del alojamiento.</p>";
+      }
+    }
+
+    function llenarOpcionesCategorias() {
+      const select = document.getElementById("filtro-servicio-categoria");
+      if (!select) return;
+
+      const categorias = Array.from(new Set(serviciosAlojamientoGlobal.map((s) => s.categoria))).sort();
+      select.innerHTML = '<option value="">Todas las categorias</option>';
+      categorias.forEach((cat) => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderServiciosAlojamiento(servicios) {
+      const cont = document.getElementById("listaServiciosAlojamiento");
+      if (!cont) return;
+
+      if (!servicios.length) {
+        cont.innerHTML = "<p>No hay servicios disponibles para este alojamiento.</p>";
+        return;
+      }
+
+      const grupos = servicios.reduce((acc, servicio) => {
+        const clave = servicio.categoria || "General";
+        if (!acc[clave]) acc[clave] = [];
+        acc[clave].push(servicio);
+        return acc;
+      }, {});
+
+      cont.innerHTML = Object.entries(grupos).map(([categoria, items]) => {
+        const opciones = items.map((s) => {
+          const valor = s.valorNumerico !== null ? s.valorNumerico : 0;
+          const checked = serviciosSeleccionados.some((sel) => sel.id === s.id) ? "checked" : "";
+          return `
+            <div class="servicio-opcion">
+              <label>
+                <input type="checkbox" data-servicio-id="${s.id}" ${checked} onchange="toggleServicioAdicional(${s.id})">
+                <span>${s.nombre}</span>
+              </label>
+              <strong>$${Number(valor).toLocaleString("es-CO")}</strong>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="servicio-card">
+            <h4>${categoria}</h4>
+            ${opciones}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleServicioAdicional(idServicio) {
+      const servicio = serviciosAlojamientoGlobal.find((item) => item.id === idServicio);
+      if (!servicio) return;
+
+      const existente = serviciosSeleccionados.find((item) => item.id === idServicio);
+      if (existente) {
+        serviciosSeleccionados = serviciosSeleccionados.filter((item) => item.id !== idServicio);
+      } else {
+        serviciosSeleccionados.push(servicio);
+      }
+
+      actualizarResumenReserva();
+    }
+
+    function actualizarResumenReserva() {
+      const resumen = document.getElementById("resumenReserva");
+      if (!resumen) return;
+
+      const totalServicios = serviciosSeleccionados.reduce((acc, item) => acc + (item.valorNumerico || 0), 0);
+      const valorHabitacion = habitacionSeleccionada ? habitacionSeleccionada.precio : 0;
+      const total = valorHabitacion + totalServicios;
+      const serviciosTexto = serviciosSeleccionados.length
+        ? serviciosSeleccionados.map((item) => item.nombre).join(", ")
+        : "Ninguno";
+
+      resumen.innerHTML = `
+        <h3>📌 Resumen de selección</h3>
+        <p>🛏️ Habitación: ${habitacionSeleccionada ? `${habitacionSeleccionada.nombre} ($${habitacionSeleccionada.precio.toLocaleString("es-CO")})` : "No seleccionada"}</p>
+        <p>🧩 Servicios elegidos: ${serviciosTexto}</p>
+        <p>💰 Total servicios: $${totalServicios.toLocaleString("es-CO")}</p>
+        <p><strong>💵 Total acumulado: $${total.toLocaleString("es-CO")}</strong></p>
+      `;
+    }
+
+    function aplicarFiltroServiciosAlojamiento() {
+      const texto = (document.getElementById("filtro-servicio-texto")?.value || "").toLowerCase().trim();
+      const categoria = document.getElementById("filtro-servicio-categoria")?.value || "";
+      const min = document.getElementById("filtro-servicio-valor-min")?.value;
+      const max = document.getElementById("filtro-servicio-valor-max")?.value;
+
+      const minNum = min !== "" ? Number(min) : null;
+      const maxNum = max !== "" ? Number(max) : null;
+
+      const filtrados = serviciosAlojamientoGlobal.filter((s) => {
+        if (texto && !(String(s.nombre || "").toLowerCase().includes(texto) || String(s.categoria || "").toLowerCase().includes(texto))) {
+          return false;
+        }
+        if (categoria && s.categoria !== categoria) {
+          return false;
+        }
+        if (minNum !== null && (s.valorNumerico === null || s.valorNumerico < minNum)) {
+          return false;
+        }
+        if (maxNum !== null && (s.valorNumerico === null || s.valorNumerico > maxNum)) {
+          return false;
+        }
+        return true;
+      });
+
+      renderServiciosAlojamiento(filtrados);
+    }
+
+    function inicializarFiltrosServicios() {
+      [
+        document.getElementById("filtro-servicio-texto"),
+        document.getElementById("filtro-servicio-categoria"),
+        document.getElementById("filtro-servicio-valor-min"),
+        document.getElementById("filtro-servicio-valor-max")
+      ].forEach((el) => {
+        if (!el) return;
+        el.addEventListener("input", aplicarFiltroServiciosAlojamiento);
+        el.addEventListener("change", aplicarFiltroServiciosAlojamiento);
+      });
+    }
+
+    function abrirLightbox(src) {
+      const lb = document.createElement("div");
+      lb.className = "lightbox";
+      const img = document.createElement("img");
+      img.src = src;
+      lb.appendChild(img);
+      lb.onclick = () => lb.remove();
+      document.body.appendChild(lb);
+    }
+
+    function irReserva() {
+      if (!habitacionSeleccionada) {
+        alert("⚠️ Debes seleccionar una habitación antes de continuar a la reserva.");
+        return;
+      }
+
+      const aceptoPoliticas = document.getElementById("aceptaPoliticasReserva")?.checked;
+      if (!aceptoPoliticas) {
+        alert("⚠️ Debes aceptar las politicas de reserva y cancelacion para continuar.");
+        return;
+      }
+
+      const payload = {
+        alojamientoId: id,
+        alojamientoTitulo: alojamientoActual?.titulo || "",
+        habitacion: habitacionSeleccionada,
+        servicios: serviciosSeleccionados.map((item) => ({
+          id: item.id,
+          nombre: item.nombre,
+          categoria: item.categoria || "General",
+          valor: item.valorNumerico || 0
+        }))
+      };
+
+      payload.totalServicios = payload.servicios.reduce((acc, item) => acc + item.valor, 0);
+      payload.totalAcumulado = payload.habitacion.precio + payload.totalServicios;
+
+      sessionStorage.setItem("resumenReservaTuRefugio", JSON.stringify(payload));
+      window.location.href = `../reservar/reservar.html?alojamiento=${id}&habitacion=${habitacionSeleccionada.id}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      inicializarFiltrosHabitaciones();
+      inicializarFiltrosServicios();
+      await cargarDetalle();
+    });
+  </script>
+</body>
+</html>

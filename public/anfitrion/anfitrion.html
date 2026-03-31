@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel del Anfitrión - Tu Refugio</title>
+  <link rel="stylesheet" href="anfitrion.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <div class="titulo-con-logo">
+      <img src="logo.png" alt="" class="logo-principal">
+      <h1 class="titulo-principal">Panel del Anfitrión</h1>
+    </div>
+    <nav class="nav-centered">
+      <ul class="menu">
+        <li><a href="../index.html">Inicio</a></li>
+        <li>
+          <a href="#">Panel</a>
+          <ul>
+            <li><a href="#tituloCrear">Crear Alojamiento</a></li>
+            <li><a href="#habitaciones">Gestionar Habitaciones</a></li>
+            <li><a href="#buscarHabitaciones">Buscar Habitaciones</a></li>
+            <li><a href="#serviciosAdicionales">Servicios Adicionales</a></li>
+            <li><a href="#lista">Mis Alojamientos</a></li>
+            <li><a href="#cancelacionesAnfitrion">Solicitudes de Cancelacion</a></li>
+            <li><a href="#estadisticas">Estadísticas</a></li>
+            <li><a href="#galeriaAlojamientos">Galería de Alojamientos</a></li>
+            <li><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <main class="container">
+    <!-- CREAR ALOJAMIENTO -->
+    <section id="crear" class="card">
+      <button type="button" class="toggle-btn" id="toggleCrear">
+        <h3 id="tituloCrear">➕ Crear Alojamiento</h3>
+      </button>
+      <div id="formContainer" class="form-container collapsed">
+        <form id="formAlojamiento" onsubmit="event.preventDefault(); crearAlojamiento();">
+
+        <!-- INFORMACIÓN BÁSICA -->
+        <div class="form-section">
+          <h4>📋 Información Básica</h4>
+          <div class="form-group">
+            <label for="titulo">Título del alojamiento *</label>
+            <input id="titulo" type="text" placeholder="Ej: Apartamento Luminoso Centro" required />
+          </div>
+          <div class="form-group">
+            <label for="descripcion">Descripción detallada</label>
+            <textarea id="descripcion" placeholder="Describe tu alojamiento: comodidades, ambiente, qué hace especial este lugar..." rows="4" cols="50"></textarea>
+          </div>
+        </div>
+
+        <!-- UBICACIÓN Y ZONA -->
+        <div class="form-section">
+          <h4>📍 Ubicación y Zona</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ciudad">Ciudad</label>
+              <input id="ciudad" type="text" placeholder="Ej: Bogotá" />
+            </div>
+            <div class="form-group">
+              <label for="region">Región</label>
+              <input id="region" type="text" placeholder="Ej: Cundinamarca" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="zona">Tipo de zona</label>
+            <select id="zona">
+              <option value="">Seleccionar zona</option>
+              <option value="rural">🏞️ Rural</option>
+              <option value="residencial">🏠 Residencial</option>
+              <option value="urbana">🏙️ Urbana</option>
+              <option value="comercial">🏪 Comercial</option>
+              <option value="industrial">🏭 Industrial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cercania">Cercanía a puntos de interés</label>
+            <input id="cercania" type="text" placeholder="Ej: Cerca al centro histórico, 5 min del metro" />
+          </div>
+
+          <div class="form-group">
+            <label for="direccion">Dirección exacta (opcional)</label>
+            <input id="direccion" type="text" placeholder="Ej: Calle 123 #45-67" />
+          </div>
+
+          <button type="button" class="btn-geo" onclick="obtenerUbicacionGPS()">📍 Cargar ubicación con GPS (opcional)</button>
+          <input type="hidden" id="gpsUbicacion" />
+          <div id="avisoUbicacion" style="font-size:0.9rem; margin-top:6px;"></div>
+
+        </div>
+
+        <!-- CARACTERÍSTICAS -->
+        <div class="form-section">
+          <h4>🏠 Características</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vistas">Vistas</label>
+              <select id="vistas">
+                <option value="">Seleccionar vistas</option>
+                <option value="mar">🌊 Mar</option>
+                <option value="montaña">⛰️ Montaña</option>
+                <option value="ciudad">🏙️ Ciudad</option>
+                <option value="jardín">🌳 Jardín</option>
+                <option value="ninguna">Sin vistas especiales</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="capacidad">Capacidad de personas *</label>
+              <input id="capacidad" type="number" placeholder="Ej: 4" min="1" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="precio">Precio por noche (COP) *</label>
+            <input id="precio" type="number" placeholder="Ej: 150000" min="0" required />
+          </div>
+        </div>
+
+        <!-- POLÍTICAS -->
+        <div class="form-section">
+          <h4>📜 Políticas</h4>
+          <div class="form-group">
+            <label for="politicas">Políticas de Reserva y Cancelación</label>
+            <textarea id="politicas" placeholder="Ej: • Cancelación gratuita hasta 24 horas antes&#10;• Check-in: 3:00 PM - 10:00 PM&#10;• Check-out: 11:00 AM&#10;• No se permiten mascotas&#10;• Prohibido fumar" rows="6" cols="50"></textarea>
+          </div>
+        </div>
+
+        <!-- INPUT OCULTO (FIX IMPORTANTE) -->
+        <input type="file" id="inputImagen" accept="image/*" multiple style="display:none">
+        <button type="submit">✅ Crear alojamiento</button>
+      </form>
+      </div>
+    </section>
+
+    <!-- HABITACIONES -->
+    <section id="habitaciones" class="card">
+      <button type="button" class="toggle-btn" id="toggleHabitaciones">
+        <h3>🛏️ Gestionar Habitaciones por Alojamiento</h3>
+      </button>
+      <div id="formContainerHab" class="form-container collapsed">
+
+        <!-- CREAR HABITACIÓN -->
+        <div class="form-section">
+          <h4>➕ Crear Habitación</h4>
+          <form onsubmit="event.preventDefault(); crearHabitacion();">
+            <div class="form-group">
+              <label for="hab_alojamientoId">ID del alojamiento *</label>
+              <input id="hab_alojamientoId" type="number" placeholder="Ej: 1" min="1" required />
+            </div>
+            <div class="form-group">
+              <label for="hab_nombre">Nombre de la habitación *</label>
+              <input id="hab_nombre" type="text" placeholder="Ej: Suite Principal" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hab_capacidad">Capacidad de personas *</label>
+                <input id="hab_capacidad" type="number" placeholder="Ej: 2" min="1" required />
+              </div>
+              <div class="form-group">
+                <label for="hab_precio">Precio por noche (COP) *</label>
+                <input id="hab_precio" type="number" placeholder="Ej: 100000" min="0" required />
+              </div>
+            </div>
+            <button type="submit">✅ Crear habitación</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVICIOS ADICIONALES -->
+    <section id="serviciosAdicionales" class="card">
+      <button type="button" class="toggle-btn" id="toggleServiciosAdicionales">
+        <h3>🧩 Servicios Adicionales con Valor</h3>
+      </button>
+      <div id="formContainerServiciosAdicionales" class="form-container collapsed">
+      <div class="form-section">
+        <form onsubmit="event.preventDefault(); guardarServicioAdicional();">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sa_alojamientoId">ID del alojamiento *</label>
+              <input id="sa_alojamientoId" type="number" min="1" placeholder="Ej: 2" required>
+            </div>
+            <div class="form-group">
+              <label for="sa_valor">Valor adicional (COP)</label>
+              <input id="sa_valor" type="number" min="0" placeholder="Ej: 25000">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sa_nombre">Nombre del servicio *</label>
+              <input id="sa_nombre" type="text" placeholder="Ej: Spa, Desayuno premium" required>
+            </div>
+            <div class="form-group">
+              <label for="sa_categoria">Categoría</label>
+              <select id="sa_categoria">
+                <option value="">General</option>
+                <option value="Conectividad y Tecnología">Conectividad y Tecnología</option>
+                <option value="Cocina y Alimentación">Cocina y Alimentación</option>
+                <option value="Comodidad y Mobiliario">Comodidad y Mobiliario</option>
+                <option value="Baño y Aseo">Baño y Aseo</option>
+                <option value="Bienestar y Relax">Bienestar y Relax</option>
+                <option value="Mascotas">Mascotas</option>
+                <option value="Seguridad">Seguridad</option>
+                <option value="Transporte y Acceso">Transporte y Acceso</option>
+                <option value="Limpieza y Servicios Incluidos">Limpieza y Servicios Incluidos</option>
+                <option value="Entretenimiento">Entretenimiento</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit">✅ Guardar servicio adicional</button>
+        </form>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label for="sa_buscarAlojamiento">Ver servicios de alojamiento</label>
+          <div class="search-row">
+            <input id="sa_buscarAlojamiento" type="number" min="1" placeholder="Ej: 2" onkeydown="if(event.key==='Enter'){event.preventDefault(); cargarServiciosAdicionales();}">
+            <button type="button" class="btn-buscar" onclick="cargarServiciosAdicionales()">🔎 Cargar</button>
+          </div>
+        </div>
+
+        <div id="sa_lista" class="cards"></div>
+      </div>
+      </div>
+    </section>
+
+    <!-- BUSCAR HABITACIONES (SECCIÓN INDEPENDIENTE) -->
+    <section id="buscarHabitaciones" class="card">
+      <h3>🔍 Buscar Habitaciones</h3>
+      <div class="form-section">
+        <div class="form-group">
+          <label for="buscarAlojamiento">ID del alojamiento</label>
+          <div class="search-row">
+            <input id="buscarAlojamiento" type="number" placeholder="Ej: 1" min="1" onkeydown="if(event.key==='Enter'){event.preventDefault(); cargarHabitaciones();}" />
+            <button type="button" onclick="cargarHabitaciones()" class="btn-buscar">🔎 Buscar</button>
+          </div>
+        </div>
+        <div id="listaHabitaciones" class="cards"></div>
+      </div>
+    </section>
+
+
+
+    <!-- LISTAR ALOJAMIENTOS -->
+<section id="lista" class="card">
+  <h3>🏠 Mis Alojamientos</h3>
+  <div id="listaAlojamientos" class="cards"></div>
+</section>
+
+
+        <!-- SOLICITUDES DE CANCELACION -->
+        <section id="cancelacionesAnfitrion" class="card">
+          <h3>💬 Solicitudes de Cancelacion (Chatbot Turista)</h3>
+          <p style="margin: 8px 0 14px 0; color: #b0bec5;">Aqui veras las solicitudes confirmadas por codigo desde el panel del turista. Puedes definir porcentaje de devolucion y motivo.</p>
+          <button type="button" class="btn-buscar" onclick="cargarSolicitudesCancelacionAnfitrion()">🔄 Actualizar solicitudes</button>
+          <div id="listaCancelacionesPendientes" class="cards" style="margin-top: 16px;"></div>
+        </section>
+
+
+
+    <!-- ESTADÍSTICAS -->
+    <section id="estadisticas" class="estadisticas card">
+      <h3>📊 Ocupación Semanal (%)</h3>
+      <canvas id="graficaOcupacion"></canvas>
+    </section>
+
+<!-- GALERÍA -->
+<section id="galeriaAlojamientos" class="collage card">
+  <h3>🖼️ Galería de Alojamientos</h3>
+  <div id="galeria-alojamientos" class="grid-galeria"></div>
+</section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer></footer>
+
+  <!-- 📸 CAMARA-->
+  <div id="camaraModal" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    z-index:9999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+  ">
+    <video id="videoCamara" autoplay playsinline style="width:90%; max-width:400px; border-radius:10px;"></video>
+    <div style="margin-top:10px;">
+      <button onclick="tomarFoto()">📸 Capturar</button>
+      <button onclick="cerrarCamara()">❌ Cerrar</button>
+    </div>
+  </div>
+<!-- ===============================
+MODAL SELECCIÓN DE SERVICIOS
+=============================== -->
+<div id="modalServicios" class="modal-servicios">
+  <div class="modal-contenido">
+    <h3>Seleccionar servicios</h3>
+
+    <form id="formServicios"></form>
+
+    <div class="modal-botones">
+      <button id="btnGuardarServicios" type="button">✅ Guardar</button>
+      <button type="button" onclick="cerrarModalServicios()">❌Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalEliminarServicios" class="modal" style="display:none;">
+  <div class="modal-contenido">
+    <h3>Seleccionar servicios a eliminar</h3>
+    <form id="formEliminarServicios"></form>
+    <div class="modal-botones">
+      <button id="btnEliminarServicios">🗑️ Eliminar seleccionados</button>
+      <button onclick="cerrarModalEliminarServicios()">❌Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPT -->
+  <script src="anfitrion.js"></script>
+
+</body>
+</html>

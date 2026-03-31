@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Administrador</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="logo-container">
+      <img src="logo.png" alt="Logo Tu Refugio">
+    </div>
+    <h2>Acceso Administrador</h2>
+
+    <!-- Cambiado para usar JavaScript en lugar de una acción fija -->
+    <form onsubmit="return loginAdmin(event)">
+      <input type="email" name="usuario" placeholder="Correo administrador" required>
+      <input type="password" name="password" placeholder="Contraseña" required>
+      <button type="submit">Ingresar</button>
+      <ul>
+        <li><a href="../index.html">Volver</a></li>
+      </ul>
+    </form>
+  </div>
+
+  <script>
+    async function loginAdmin(event) {
+      event.preventDefault();
+
+      const usuario = event.target.usuario.value.trim();
+      const password = event.target.password.value.trim();
+
+      if (!usuario || !password) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Campos obligatorios',
+          text: 'Ingresa correo y contraseña.'
+        });
+        return false;
+      }
+
+      try {
+        const response = await fetch('/api/auth/admin/request-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo: usuario, contraseña: password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: result.error || 'No se pudo iniciar el proceso de confirmación.'
+          });
+          return false;
+        }
+
+        await Swal.fire({
+          icon: 'info',
+          title: 'Código enviado',
+          text: 'Revisa el correo del administrador e ingresa el código de confirmación.'
+        });
+
+        const promptCode = await Swal.fire({
+          title: 'Confirmar acceso',
+          input: 'text',
+          inputLabel: 'Código de 6 dígitos',
+          inputPlaceholder: 'Ej: 123456',
+          inputAttributes: { maxlength: '6', autocapitalize: 'off', autocorrect: 'off' },
+          showCancelButton: true,
+          confirmButtonText: 'Verificar',
+          cancelButtonText: 'Cancelar',
+          inputValidator: (value) => {
+            if (!value || !/^\d{6}$/.test(String(value).trim())) {
+              return 'Ingresa un código numérico de 6 dígitos.';
+            }
+            return null;
+          }
+        });
+
+        if (!promptCode.isConfirmed) {
+          return false;
+        }
+
+        const verifyResponse = await fetch('/api/auth/admin/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            correo: usuario,
+            codigo: String(promptCode.value || '').trim()
+          })
+        });
+
+        const verifyResult = await verifyResponse.json();
+        if (!verifyResponse.ok) {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Código no válido',
+            text: verifyResult.error || 'No se pudo validar el código de confirmación.'
+          });
+          return false;
+        }
+
+        const rol = String(verifyResult?.usuario?.rol || '').toLowerCase().trim();
+        if (rol !== 'admin') {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Acceso denegado',
+            text: 'Esta cuenta no tiene permisos de administrador.'
+          });
+          return false;
+        }
+
+        localStorage.setItem('token', verifyResult.token);
+        localStorage.setItem('rol', rol);
+
+        window.location.href = '../bienvenido_admin/b_admin.html';
+      } catch (_err) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error de conexión',
+          text: 'No se pudo conectar con el servidor.'
+        });
+      }
+
+      return false;
+    }
+  </script>
+
+</body>
+</html>

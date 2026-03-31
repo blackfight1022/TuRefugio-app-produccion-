@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reservar - Tu Refugio</title>
+  <link rel="stylesheet" href="reservar.css" />
+  <style>
+    .resumen-reserva {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #f4fbfc, #ecf7fa);
+      border: 1px solid #cfe4ea;
+      text-align: left;
+      box-shadow: 0 10px 24px rgba(0, 73, 85, 0.08);
+    }
+
+    .resumen-reserva h2 {
+      margin-bottom: 12px;
+      font-size: 20px;
+      color: #18515b;
+      border-bottom: 1px solid #cfe4ea;
+      padding-bottom: 8px;
+    }
+
+    .resumen-reserva p,
+    .resumen-reserva li {
+      margin: 6px 0;
+    }
+
+    .resumen-reserva ul {
+      padding-left: 20px;
+    }
+
+    .resumen-linea-total {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #9cc5cf;
+      font-weight: 700;
+      color: #0f4650;
+    }
+
+    .info-estadia {
+      margin-top: -4px;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #eef7fa;
+      border: 1px solid #d4e7ee;
+      color: #18515b;
+      font-size: 14px;
+    }
+
+    .checkout-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 29, 36, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1200;
+    }
+
+    .checkout-modal.activo {
+      display: flex;
+    }
+
+    .checkout-card {
+      width: min(720px, 100%);
+      background: #f9fcfd;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+      border: 1px solid #d2e6eb;
+    }
+
+    .checkout-card h2 {
+      color: #15505a;
+      margin-bottom: 8px;
+    }
+
+    .checkout-card p {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .checkout-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .checkout-card label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #244f57;
+    }
+
+    .checkout-card input,
+    .checkout-card select {
+      width: 100%;
+      padding: 0.7rem;
+      border-radius: 10px;
+      border: 1px solid #c4d7dc;
+      font-size: 0.98rem;
+    }
+
+    .checkout-resumen-mini {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eef7fa;
+      border: 1px solid #d2e6eb;
+      color: #184f58;
+      text-align: left;
+    }
+
+    .checkout-acciones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn-secundario {
+      background: #dfeef1;
+      color: #1d4f57;
+    }
+
+    .btn-secundario:hover,
+    .btn-secundario:focus {
+      background: #cfe2e7;
+    }
+
+    button[type="submit"]:disabled {
+      background: #9ab6bc;
+      cursor: not-allowed;
+      opacity: 0.78;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="titulo-con-logo">
+      <img src="logo.png" alt="Logo de Tu Refugio" class="logo-principal">
+      <h1 class="titulo-principal">Tu Refugio</h1>
+    </div>
+    <nav class="nav-centered">
+      <ul class="menu">
+        <li><a href="../index.html">Inicio</a></li>
+        <li><a href="#">Registro</a>
+          <ul>
+            <li><a href="../registro_turista/turista.html">Turista</a></li>
+            <li><a href="../registro_anfitrion/anfitrion.html">Anfitrión</a></li>
+          </ul>
+        </li>
+        <li><a href="../login/login.html">Iniciar Sesión</a></li>
+        <li><a href="#">Explorar Alojamientos</a>
+          <ul>
+            <li><a href="../explorar_alojamientos_fichas_detalle/explorar.html">Ficha Detalle</a></li>
+            
+            <li><a href="../calificar_reseñar/calificar.html">Calificar / Reseñar</a></li>
+          </ul>
+        </li>
+        
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="login">
+      <h1>Formulario de Reserva</h1>
+      <div id="resumenReserva" class="resumen-reserva"></div>
+      <form>
+        <label for="alojamiento">Alojamiento</label>
+        <input type="text" id="alojamiento" value="" readonly />
+
+        <label for="habitacion">Habitación seleccionada</label>
+        <input type="text" id="habitacion" value="" readonly />
+
+        <label for="fecha-inicio">Fecha de Inicio</label>
+        <input type="date" id="fecha-inicio" name="fecha-inicio" required />
+
+        <label for="fecha-fin">Fecha de Fin</label>
+        <input type="date" id="fecha-fin" name="fecha-fin" required />
+        <p id="valor-estadia" class="info-estadia">Selecciona un rango de fechas para calcular el valor de tu estadia.</p>
+
+        <label for="personas">Cantidad de Personas</label>
+        <input type="number" id="personas" name="personas" min="1" required />
+
+        <label for="total-estimado">Total estimado</label>
+        <input type="text" id="total-estimado" value="" readonly />
+
+        <button type="submit">Confirmar Reserva</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p></p>
+    </div>
+  </footer>
+
+  <div id="checkoutModal" class="checkout-modal" aria-hidden="true">
+    <div class="checkout-card">
+      <h2>Datos del titular de la reserva</h2>
+      <p>Estos datos son obligatorios para preparar el pago, emitir la factura y dejar la reserva asociada al huésped correcto.</p>
+
+      <form id="checkoutForm">
+        <div class="checkout-grid">
+          <div class="full">
+            <label for="checkout-nombre">Nombre completo</label>
+            <input type="text" id="checkout-nombre" required>
+          </div>
+
+          <div>
+            <label for="checkout-tipo-documento">Tipo de documento</label>
+            <select id="checkout-tipo-documento" required>
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="PP">Pasaporte</option>
+              <option value="NIT">NIT</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="checkout-numero-documento">Número de documento</label>
+            <input type="text" id="checkout-numero-documento" inputmode="numeric" required>
+          </div>
+
+          <div>
+            <label for="checkout-correo">Correo electrónico</label>
+            <input type="email" id="checkout-correo" required>
+          </div>
+
+          <div>
+            <label for="checkout-telefono">Teléfono</label>
+            <input type="tel" id="checkout-telefono" required>
+          </div>
+        </div>
+
+        <div id="checkoutResumenMini" class="checkout-resumen-mini"></div>
+
+        <div class="checkout-acciones">
+          <button type="button" id="cerrarCheckout" class="btn-secundario">Cancelar</button>
+          <button type="submit" id="btnPagarWompi" disabled>Pagar</button>
+        </div>
+
+        <div id="wompiWidgetZone" style="display:none; margin-top:12px;"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="reservar.js?v=20260330c"></script>
+</body>
+</html>

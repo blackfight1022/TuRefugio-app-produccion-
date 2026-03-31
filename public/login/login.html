@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar Sesión - Tu Refugio</title>
+  <link rel="stylesheet" href="login.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <header>
+    <div class="titulo-con-logo">
+      <img src="logo.png" alt="" class="logo-principal">
+      <h1 class="titulo-principal">Tu Refugio</h1>
+    </div>
+
+    <nav class="nav-centered">
+      <ul class="menu">
+        <li><a href="../index.html">Inicio</a></li>
+        <li><a href="#">Registro</a>
+          <ul>
+            <li><a href="../registro_turista/turista.html">Turista</a></li>
+            <li><a href="../registro_anfitrion/anfitrion.html">Anfitrión</a></li>
+          </ul>
+        </li>
+        <li><a href="#">Explorar Alojamientos</a>
+          <ul>
+            <li><a href="../explorar_alojamientos_fichas_detalle/explorar.html">Ficha Detalle</a></li>
+            <li><a href="../calificar_reseñar/calificar.html">Calificar / Reseñar</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="login">
+      <h1>Iniciar Sesión</h1>
+      <form id="loginForm">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="correo" required />
+
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="contraseña" required />
+
+        <button type="submit">Ingresar</button>
+      </form>
+      <p>¿No tienes cuenta? <a href="../registro_turista/turista.html"><u>Regístrate</u></a></p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p></p>
+    </div>
+  </footer>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('token');
+  const rol = localStorage.getItem('rol');
+
+  if (token && rol) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Sesión activa',
+      text: 'Ya tienes una sesión iniciada. Redirigiendo...',
+      timer: 1800,
+      showConfirmButton: false
+    });
+
+    setTimeout(() => {
+      if (rol === 'admin') {
+        window.location.href = '../bienvenido_admin/b_admin.html';
+
+      } else if (rol === 'anfitrion') {
+        window.location.href = '../anfitrion/anfitrion.html';
+
+      } else if (rol === 'visitante') {
+        window.location.href = '../turista/turista.html';
+      }
+    }, 1900);
+  }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const correo = document.getElementById('email').value.trim();
+  const contraseña = document.getElementById('password').value.trim();
+
+  if (!correo || !contraseña) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos obligatorios',
+      text: 'Debes ingresar correo y contraseña'
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo, contraseña })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: result.error || 'Credenciales inválidas'
+      });
+      return;
+    }
+
+    const token = result.token;
+    const rol = result.usuario.rol.toLowerCase().trim();
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('rol', rol);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Bienvenido',
+      text: 'Inicio de sesión exitoso.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    setTimeout(() => {
+      if (rol === 'admin') {
+        window.location.href = '../bienvenido_admin/b_admin.html';
+
+      } else if (rol === 'anfitrion') {
+        window.location.href = '../anfitrion/anfitrion.html';
+
+      } else if (rol === 'visitante') {
+        window.location.href = '../turista/turista.html';
+
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Rol no reconocido',
+          text: 'Rol recibido: ' + rol
+        });
+      }
+    }, 1600);
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de red',
+      text: 'No se pudo conectar con el servidor.'
+    });
+  }
+});
+</script>
+</body>
+</html>

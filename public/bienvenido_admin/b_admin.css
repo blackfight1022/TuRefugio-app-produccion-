@@ -1,0 +1,288 @@
+:root {
+  --primary: #007B8A;
+  --background: #f1f5f7;
+  --text: #2c3e50;
+  --white: #fff;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+  --font: 'Montserrat', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--background);
+  color: var(--text);
+  display: flex;
+}
+
+.admin-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--primary);
+  color: white;
+  width: 240px;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar .logo {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.sidebar .logo img {
+  width: 160px;
+  height: auto;
+}
+
+.mapa-nav-titulo {
+  width: 100%;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  display: block;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  background-color: rgba(255, 255, 255, 0.16);
+  margin-bottom: 0.8rem;
+  transition: opacity 0.3s ease;
+}
+
+.mapa-nav-titulo:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.sidebar nav ul {
+  list-style: none;
+  width: 100%;
+  padding-left: 0;
+}
+
+.sidebar nav ul li {
+  margin-bottom: 1.2rem;
+}
+
+.sidebar nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+  display: block;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+}
+
+.sidebar nav ul li a:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.sidebar nav ul li a.activo {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+.main-panel {
+  flex: 1;
+  padding: 2rem;
+}
+
+.admin-header {
+  background: var(--white);
+  padding: 1rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.cards-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+
+.admin-card {
+  background: var(--white);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease;
+}
+
+.admin-card:hover {
+  transform: translateY(-6px);
+}
+
+.admin-card h2 {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.admin-header p {
+  margin-top: 0.35rem;
+  color: #587483;
+}
+
+.resumen-card p {
+  margin-top: 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e4f57;
+}
+
+.admin-card a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+.panel-admin {
+  background: var(--white);
+  padding: 1rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-top: 1.4rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.panel-header h2 {
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.panel-header button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+}
+
+.panel-header button:hover {
+  opacity: 0.9;
+}
+
+.nota-panel {
+  font-size: 0.9rem;
+  color: #476573;
+  margin-bottom: 0.75rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e3edf1;
+  padding: 0.65rem 0.5rem;
+  text-align: left;
+  font-size: 0.86rem;
+  vertical-align: top;
+}
+
+th {
+  color: #365361;
+  background: #f3f8fb;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.badge-pendiente {
+  background: #fff3db;
+  color: #8a5a00;
+}
+
+.badge-confirmada,
+.badge-pagado,
+.badge-activo {
+  background: #dff5e8;
+  color: #16623a;
+}
+
+.badge-cancelada,
+.badge-rechazado,
+.badge-suspendido {
+  background: #ffe4e4;
+  color: #8f2222;
+}
+
+.badge-en_curso,
+.badge-finalizada {
+  background: #ddeeff;
+  color: #224f86;
+}
+
+.acciones-cell {
+  white-space: nowrap;
+}
+
+.btn-mini {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  margin-right: 0.3rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-mini:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ok {
+  background: #dbf3e5;
+  color: #1a7549;
+}
+
+.btn-warn {
+  background: #ffe9bf;
+  color: #8a5a00;
+}
+
+.btn-danger {
+  background: #ffdede;
+  color: #8e2323;
+}

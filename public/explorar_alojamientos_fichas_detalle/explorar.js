@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:3000/api";
+// Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
 
 function normalizarRutaImagen(rutaOriginal) {
   const limpio = String(rutaOriginal || "")
@@ -12,7 +13,8 @@ function normalizarRutaImagen(rutaOriginal) {
 }
 
 function construirUrlImagen(rutaOriginal) {
-  return `http://localhost:3000/${normalizarRutaImagen(rutaOriginal)}`;
+  const base = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}`;
+  return `${base}/${normalizarRutaImagen(rutaOriginal)}`;
 }
 
 // Variable global para almacenar los alojamientos originales
@@ -103,7 +105,7 @@ async function renderizarAlojamientos(alojamientos, contenedor) {
     // Imagen principal
     let imgSrc = aloj.imagen_principal
       ? construirUrlImagen(aloj.imagen_principal)
-      : "http://localhost:3000/uploads/default.jpg";
+      : `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/uploads/default.jpg`;
 
     const estrellas = construirTextoEstrellas(aloj.calificacion_promedio);
     const bloqueCalificacion = estrellas
@@ -358,7 +360,7 @@ async function cargarExplorarAlojamientos() {
 
       const imgSrc = a.imagen_principal
         ? construirUrlImagen(a.imagen_principal)
-        : "http://localhost:3000/uploads/default.jpg";
+        : `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/uploads/default.jpg`;
 
       card.innerHTML = `
         <div class="card-img-container">
@@ -465,7 +467,7 @@ function abrirLightbox(src) {
 }
 
 function verDetalles(id) {
-  window.location.href = `http://localhost:3000/detalles_alojamiento/detalles.html?id=${id}`;
+  window.location.href = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/detalles_alojamiento/detalles.html?id=${id}`;
 }
 
 // Función para mostrar modal de políticas

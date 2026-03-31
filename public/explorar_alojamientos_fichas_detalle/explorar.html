@@ -37,6 +37,7 @@
   </header>
 
   <main>
+    <div class="explorar-layout">
     <section class="formulario">
       <h1>Explorar Alojamientos</h1>
       
@@ -101,21 +102,15 @@
         <button id="btnFiltrar" class="btn-filtrar">🔎 Aplicar Filtros</button>
         <button id="btnLimpiar" class="btn-limpiar">🔄 Limpiar Filtros</button>
       </div>
+    </section>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-
-<section class="formulario" id="explorarAlojamientos">
-    <div id="cardsExplorar" class="grid-cards">
-    <!-- Alojamientos se cargarán dinámicamente -->
-  </div>
-</section>
-                 
-        </div>
-        
-          
-        </div>
+    <!-- SECCIÓN DE ALOJAMIENTOS EXPLORADOS -->
+    <section id="explorarAlojamientos">
+      <div id="cardsExplorar" class="grid-cards">
+        <!-- Alojamientos se cargarán dinámicamente aquí -->
       </div>
     </section>
+    </div>
   </main>
 
   <footer>

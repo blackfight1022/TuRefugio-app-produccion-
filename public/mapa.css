@@ -262,6 +262,66 @@ footer {
   margin-top: auto;
 }
 
+@media (max-width: 900px) {
+  .logo img {
+    height: 42px;
+  }
+
+  .titulo-principal {
+    font-size: 1.65rem;
+  }
+
+  nav.nav-centered {
+    padding: 0.85rem 1rem;
+  }
+
+  nav.nav-centered ul.menu {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero-text h1 {
+    font-size: 1.85rem;
+  }
+
+  .hero-text p {
+    font-size: 1rem;
+  }
+
+  nav.nav-centered ul.menu {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .menu > li,
+  .menu > li > a {
+    width: 100%;
+    text-align: center;
+  }
+
+  .menu li ul {
+    position: static;
+    width: 100%;
+    box-shadow: none;
+    margin-top: 0.35rem;
+  }
+
+  .featured {
+    padding: 3rem 1rem;
+  }
+
+  .card {
+    width: min(100%, 360px);
+  }
+}
+
 
 .menu li a {
   transition: background-color 0.3s ease;

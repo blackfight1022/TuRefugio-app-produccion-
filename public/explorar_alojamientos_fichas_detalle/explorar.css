@@ -129,17 +129,26 @@ nav ul.menu {
 main {
   padding: 2rem;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+}
+
+/* LAYOUT HORIZONTAL: SIDEBAR FILTROS + CARDS */
+.explorar-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .formulario, .login {
   background-color: var(--white);
   border-radius: var(--radius);
   padding: 2rem;
-  width: 100%;
-  max-width: 600px;
+  width: 300px;
+  flex-shrink: 0;
   box-shadow: var(--shadow);
+  position: sticky;
+  top: 100px;
 }
 
 .formulario h1, .login h1 {
@@ -405,17 +414,17 @@ footer {
 /* CONTENEDOR GENERAL */
 #explorarAlojamientos {
   background-color: #d9e2e8;
-  padding: 3rem 1rem;
-  display: flex;
-  justify-content: center;
+  padding: 2rem 1rem;
+  border-radius: var(--radius);
+  flex: 1;
+  min-width: 0;
 }
 
 /* CONTENEDOR INTERNO CENTRADO */
 .grid-cards {
   width: 100%;
-  max-width: 1100px; /* 🔥 centra todo como en tu imagen */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
 }
 
@@ -504,6 +513,108 @@ footer {
 /* EFECTO HOVER */
 .img-box img:hover {
   transform: scale(1.05);
+}
+
+@media (max-width: 900px) {
+  .logo-principal {
+    position: static;
+    transform: none;
+    display: block;
+    margin: 0 auto 0.8rem;
+    height: 76px;
+  }
+
+  .titulo-con-logo {
+    padding: 1rem;
+  }
+
+  nav ul.menu {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0 1rem;
+  }
+
+  /* En tablets: sidebar se hace más estrecha */
+  .formulario, .login {
+    width: 260px;
+  }
+
+  .grid-cards {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  /* En móvil: layout vertical, filtros arriba - cards abajo */
+  .explorar-layout {
+    flex-direction: column;
+  }
+
+  .formulario, .login {
+    width: 100%;
+    position: static;
+  }
+
+  #explorarAlojamientos {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  main,
+  #explorarAlojamientos {
+    padding: 1rem;
+  }
+
+  .titulo-principal {
+    font-size: 1.55rem;
+  }
+
+  nav.nav-centered {
+    padding: 0.75rem;
+  }
+
+  nav ul.menu {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .menu > li,
+  .menu > li > a {
+    width: 100%;
+  }
+
+  .menu li ul {
+    position: static;
+    box-shadow: none;
+    margin-top: 0.35rem;
+  }
+
+  .filtros-container {
+    padding: 1rem;
+  }
+
+  .filtros-grid,
+  .grid-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-filtrar,
+  .btn-limpiar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .card img {
+    height: 180px;
+  }
+
+  .img-box img {
+    width: 112px;
+    height: 84px;
+  }
 }
 
 

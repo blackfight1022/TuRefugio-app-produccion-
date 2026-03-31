@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:3000/api";
+// Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
 
 function normalizarRutaImagen(rutaOriginal) {
   const limpio = String(rutaOriginal || "")
@@ -12,7 +13,8 @@ function normalizarRutaImagen(rutaOriginal) {
 }
 
 function construirUrlImagen(rutaOriginal) {
-  return `http://localhost:3000/${normalizarRutaImagen(rutaOriginal)}`;
+  const base = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}`;
+  return `${base}/${normalizarRutaImagen(rutaOriginal)}`;
 }
 
 function monedaCOP(valor) {

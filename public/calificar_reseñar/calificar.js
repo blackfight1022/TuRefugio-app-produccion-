@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:3000/api";
+// Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
 
 let accesoValidado = false;
 let reservaValidadaId = null;

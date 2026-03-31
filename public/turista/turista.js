@@ -1,7 +1,8 @@
 // ════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN INICIAL
 // ════════════════════════════════════════════════════════════════
-const API_URL = 'http://localhost:3000/api';
+// Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
 const token = localStorage.getItem('token');
 const headers = {
   'Authorization': `Bearer ${token}`,
@@ -32,7 +33,10 @@ function normalizarRutaImagen(rutaOriginal) {
 }
 
 function construirUrlImagen(rutaOriginal) {
-  return `http://localhost:3000/${normalizarRutaImagen(rutaOriginal)}`;
+function construirUrlImagen(rutaOriginal) {
+  const base = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}`;
+  return `${base}/${normalizarRutaImagen(rutaOriginal)}`;
+}
 }
 
 function formatearFechaReserva(valor) {

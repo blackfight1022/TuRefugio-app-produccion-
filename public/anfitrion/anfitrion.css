@@ -54,7 +54,7 @@ header {
   border-radius: 12px;
   max-height: 80vh;
   overflow-y: auto;
-  width: 400px;
+  width: min(95vw, 400px);
 }
 
 .modal-contenido label {
@@ -81,7 +81,7 @@ header {
   background: #ffffff;
   padding: 25px;
   border-radius: 12px;
-  width: 420px;
+  width: min(95vw, 420px);
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -1036,6 +1036,108 @@ footer {
   padding: 10px;
   font-weight: 600;
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .logo-principal {
+    position: static;
+    transform: none;
+    display: block;
+    margin: 0 auto 0.8rem;
+    height: 76px;
+  }
+
+  .titulo-con-logo {
+    padding: 1rem;
+  }
+
+  nav.nav-centered {
+    padding: 0.85rem 1rem;
+  }
+
+  .menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .container {
+    margin: 1rem auto;
+    padding: 1rem;
+  }
+
+  .search-row,
+  .form-row,
+  .stats,
+  .botones-habitacion,
+  .acciones-habitacion {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .titulo-principal {
+    font-size: 1.55rem;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+
+  .card-item h4,
+  .form-section h4 {
+    font-size: 1.1rem;
+  }
+
+  .menu {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .menu > li,
+  .menu > li > a {
+    width: 100%;
+  }
+
+  .menu li ul {
+    position: static;
+    box-shadow: none;
+    margin-top: 0.35rem;
+  }
+
+  .modal-contenido,
+  #modalServicios .modal-content {
+    width: min(92vw, 420px);
+    padding: 1rem;
+  }
+
+  .form-grid,
+  .form-row,
+  .search-row,
+  .cancelacion-item .acciones,
+  .stats {
+    flex-direction: column;
+  }
+
+  .form-grid textarea,
+  .form-grid input,
+  .search-row input,
+  .form-row .form-group,
+  .stat,
+  .card-item {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .grid-galeria {
+    gap: 12px;
+  }
+
+  .card-alojamiento {
+    min-width: 220px;
+  }
 }
 
 

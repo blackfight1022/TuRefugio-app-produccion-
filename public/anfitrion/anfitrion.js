@@ -5,7 +5,8 @@ let imagenesTemp = [];
 // ======================================
 // CONFIGURACIÓN BASE
 // ======================================
-const API_URL = "http://localhost:3000/api";
+// Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
 const token = localStorage.getItem("token");
 
 // ======================================
@@ -36,7 +37,10 @@ function normalizarRutaImagen(rutaOriginal) {
 }
 
 function construirUrlImagen(rutaOriginal) {
-  return `http://localhost:3000/${normalizarRutaImagen(rutaOriginal)}`;
+function construirUrlImagen(rutaOriginal) {
+  const base = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}`;
+  return `${base}/${normalizarRutaImagen(rutaOriginal)}`;
+}
 }
 
 let graficaOcupacionRef = null;
@@ -1713,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 2. Por cada alojamiento, traer sus imágenes
       for (const alojamiento of alojamientos) {
-        const res = await fetch(`http://localhost:3000/api/imagenes/alojamientos/${alojamiento.id}/imagenes`, { headers });
+        const res = await fetch(`${API_URL}/imagenes/alojamientos/${alojamiento.id}/imagenes`, { headers });
         const imagenes = await res.json();
 
         if (imagenes.length > 0) {
@@ -1723,9 +1727,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const rutaPublica = normalizarRutaImagen(imagenes[0].ruta);
 
           const img = document.createElement('img');
-          img.src = `http://localhost:3000/${rutaPublica}`;
+          img.src = construirUrlImagen(rutaPublica);
           img.alt = alojamiento.nombre;
-          img.onclick = () => abrirLightbox(`http://localhost:3000/${rutaPublica}`);
+          img.onclick = () => abrirLightbox(construirUrlImagen(rutaPublica));
 
           const info = document.createElement('div');
           info.className = 'card-info';
@@ -2038,7 +2042,7 @@ async function visualizarServicios(idAlojamiento) {
     const token = localStorage.getItem("token");
 
     const res = await fetch(
-      `http://localhost:3000/api/alojamientos/${idAlojamiento}/servicios`,
+      `${API_URL}/alojamientos/${idAlojamiento}/servicios`,
       {
         headers: {
           "Authorization": `Bearer ${token}`

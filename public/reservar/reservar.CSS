@@ -215,3 +215,60 @@ footer {
   border-top: 1px solid #ddd;
   margin-top: auto;
 }
+
+@media (max-width: 900px) {
+  .logo-principal {
+    position: static;
+    transform: none;
+    display: block;
+    margin: 0 auto 0.8rem;
+    height: 76px;
+  }
+
+  .titulo-con-logo {
+    padding: 1rem;
+  }
+
+  nav ul.menu {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: 1rem;
+    align-items: stretch;
+  }
+
+  .formulario,
+  .login {
+    padding: 1.5rem 1rem;
+  }
+
+  .titulo-principal {
+    font-size: 1.55rem;
+  }
+
+  nav.nav-centered {
+    padding: 0.75rem;
+  }
+
+  nav ul.menu {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  .menu > li,
+  .menu > li > a {
+    width: 100%;
+  }
+
+  .menu li ul {
+    position: static;
+    box-shadow: none;
+    margin-top: 0.35rem;
+  }
+}

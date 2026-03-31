@@ -71,3 +71,29 @@ ul {
   padding: 0;
   margin: 0;
 }
+
+@media (max-width: 640px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    padding: 1rem;
+    align-items: stretch;
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+  }
+
+  input,
+  button,
+  .btn-link {
+    font-size: 0.95rem;
+  }
+}

@@ -338,3 +338,61 @@ body {
   background-color: #5a6d7d;
   transform: translateY(-2px);
 }
+
+@media (max-width: 900px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .logo-img {
+    width: 76px;
+    height: 76px;
+  }
+
+  .panel-detalles {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-center h1 {
+    font-size: 1.4rem;
+  }
+
+  .card-detalle {
+    padding: 1rem;
+  }
+
+  .lista-habitaciones {
+    grid-template-columns: 1fr;
+  }
+
+  .galeria-detalle img {
+    width: 88px;
+    height: 72px;
+  }
+
+  .card-habitacion img {
+    height: 180px;
+    object-fit: cover;
+  }
+
+  .mapa iframe {
+    height: 220px;
+  }
+
+  .filtros-container {
+    padding: 1rem;
+  }
+
+  .filtros-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-filtrar,
+  .btn-limpiar {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}

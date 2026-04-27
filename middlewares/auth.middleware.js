@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
 const db = require('../database');
 
-const SECRET = process.env.JWT_SECRET || 'clave_super_segura';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error('[SEGURIDAD] JWT_SECRET no está definido en las variables de entorno. No se puede iniciar el servidor de forma segura.');
+}
 
 // ===============================
 // VERIFICAR TOKEN
@@ -43,8 +46,9 @@ function verificarToken(req, res, next) {
         const suspensionHasta = row.suspension_hasta ? new Date(row.suspension_hasta) : null;
         const suspensionVigente = estadoCuenta === 'suspendido' && (!suspensionHasta || suspensionHasta > new Date());
 
-        // Regla de negocio: turistas y anfitriones suspendidos no pueden entrar a paneles/rutas protegidas.
-        if (suspensionVigente && (rol === 'visitante' || rol === 'anfitrion')) {
+        // Regla de negocio: visitante suspendido no puede entrar a paneles/rutas protegidas.
+        // El anfitrión suspendido sí puede entrar a su panel para gestionar su cuenta.
+        if (suspensionVigente && rol === 'visitante') {
           return res.status(403).json({
             error: 'Tu cuenta está suspendida temporalmente. Contacta a soporte o espera la reactivación.'
           });

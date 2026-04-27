@@ -2,9 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tu_Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Tu_Refugio</title>
   <link rel="stylesheet" href="mapa.css" />
+  <link rel="stylesheet" href="/global.css" />
+  <link rel="stylesheet" href="/css/chatbot-float.css" />
 </head>
 <body>
   <header>
@@ -30,7 +35,6 @@
             <li><a href="calificar_reseñar/calificar.html">Calificar / Reseñar</a></li>
           </ul>
         </li>
-        <li><a href="admin/admin.html">Admin</a></li>
       </ul>
     </nav>
 
@@ -43,6 +47,228 @@
           <h1>Tu lugar ideal para descansar</h1>
           <p>Encuentra la experiencia perfecta para tu viaje</p>
           <a href="explorar_alojamientos_fichas_detalle/explorar.html" class="btn-primary">Explorar alojamientos</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-dashboard-home" id="panel-informativo-principal">
+      <div class="container">
+        <div class="info-dashboard-shell">
+          <section class="info-dashboard-hero">
+            <div class="info-dashboard-copy">
+              <h2>Centro de Operación Inteligente Tu Refugio</h2>
+              <p>
+                Gestiona tu experiencia de hospedaje en una plataforma confiable, clara y segura. En Tu Refugio conectamos viajeros, anfitriones y administradores de alojamiento con información útil, reservas verificadas y acompañamiento continuo.
+              </p>
+              <div class="info-cta-row">
+                <a href="explorar_alojamientos_fichas_detalle/explorar.html" class="info-cta-primary">Buscar alojamientos</a>
+                <a href="registro_anfitrion/anfitrion.html" class="info-cta-secondary">Publicar alojamiento</a>
+              </div>
+            </div>
+
+            <aside class="info-dashboard-kpis" aria-label="Indicadores de la plataforma">
+              <article class="info-kpi-card">
+                <span class="info-kpi-trend" id="kpi-trend-usuarios">+12.5%</span>
+                <strong>Usuarios activos</strong>
+                <p id="kpi-valor-usuarios">1,250</p>
+              </article>
+              <article class="info-kpi-card">
+                <span class="info-kpi-trend" id="kpi-trend-alojamientos">+8.2%</span>
+                <strong>Alojamientos</strong>
+                <p id="kpi-valor-alojamientos">3,450</p>
+              </article>
+              <article class="info-kpi-card">
+                <span class="info-kpi-trend" id="kpi-trend-reservas">+15.3%</span>
+                <strong>Reservas hoy</strong>
+                <p id="kpi-valor-reservas">220</p>
+              </article>
+              <article class="info-kpi-card">
+                <span class="info-kpi-trend" id="kpi-trend-satisfaccion">+0.3</span>
+                <strong>Satisfacción</strong>
+                <p id="kpi-valor-satisfaccion">4.8 ⭐</p>
+              </article>
+            </aside>
+          </section>
+
+          <section class="info-analytics-grid">
+            <article class="info-analytics-card">
+              <h3>Reservas mensuales</h3>
+              <div class="mini-chart-line" aria-label="Tendencia de reservas mensuales">
+                <div class="mini-chart-grid"></div>
+                <svg id="mini-chart-svg" viewBox="0 0 320 140" preserveAspectRatio="none" role="img" aria-label="Linea de tendencia">
+                  <polyline id="mini-chart-polyline" points="16,110 86,92 156,66 226,80 296,38" />
+                  <g id="mini-chart-points" class="mini-points">
+                    <circle cx="16" cy="110" r="4"></circle>
+                    <circle cx="86" cy="92" r="4"></circle>
+                    <circle cx="156" cy="66" r="4"></circle>
+                    <circle cx="226" cy="80" r="4"></circle>
+                    <circle cx="296" cy="38" r="4"></circle>
+                  </g>
+                </svg>
+                <div class="mini-chart-labels">
+                  <span id="mini-chart-label-0">Ene</span>
+                  <span id="mini-chart-label-1">Feb</span>
+                  <span id="mini-chart-label-2">Mar</span>
+                  <span id="mini-chart-label-3">Abr</span>
+                  <span id="mini-chart-label-4">May</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="info-analytics-card">
+              <h3>Destinos populares</h3>
+              <p class="info-inline-highlight" id="destinos-populares-home">Cartagena, Medellín, Santa Marta</p>
+              <p>Ciudades con mayor interés de búsqueda y reservas recientes dentro de la plataforma.</p>
+            </article>
+          </section>
+
+          <section class="info-block">
+            <div class="info-block-head">
+              <h3>Comparador inteligente</h3>
+              <p>Compara alojamientos según tus criterios preferidos</p>
+            </div>
+            <div class="info-chip-grid">
+              <span>Precio por noche</span>
+              <span>Ubicación</span>
+              <span>Capacidad de huéspedes</span>
+              <span>Servicios incluidos</span>
+              <span>Comodidades</span>
+              <span>Disponibilidad</span>
+              <span>Valoraciones</span>
+              <span>Tipo de alojamiento</span>
+            </div>
+          </section>
+
+          <section class="info-block">
+            <div class="info-block-head">
+              <h3>Roles en la plataforma</h3>
+              <p>Funciones disponibles para los perfiles operativos de Tu Refugio</p>
+            </div>
+            <div class="info-roles-grid">
+              <article class="info-role-card">
+                <h4>Viajeros</h4>
+                <ul>
+                  <li>Búsqueda avanzada de alojamientos</li>
+                  <li>Comparación de precios y servicios</li>
+                  <li>Reservas seguras y confirmadas</li>
+                  <li>Valoraciones y reseñas verificadas</li>
+                  <li>Gestión de reservas activas</li>
+                </ul>
+              </article>
+              <article class="info-role-card">
+                <h4>Anfitriones</h4>
+                <ul>
+                  <li>Publicación de alojamientos</li>
+                  <li>Gestión de disponibilidad</li>
+                  <li>Control de reservas y pagos</li>
+                  <li>Comunicación con huéspedes</li>
+                  <li>Estadísticas de rendimiento</li>
+                </ul>
+              </article>
+              <article class="info-role-card">
+                <h4>Administradores</h4>
+                <ul>
+                  <li>Monitoreo de extractos</li>
+                  <li>Seguimiento de movimientos y estados de reserva</li>
+                  <li>Control operativo con alertas de desempeño</li>
+                  <li>Generación de reportes para toma de decisiones</li>
+                  <li>Acompañamiento a anfitriones en incidencias</li>
+                </ul>
+              </article>
+              <article class="info-role-card">
+                <h4>Soporte Tu Refugio</h4>
+                <ul>
+                  <li>Orientación institucional y operativa</li>
+                  <li>Seguimiento de casos reportados</li>
+                  <li>Acompañamiento en reservas e incidencias</li>
+                  <li>Gestión de solicitudes de ayuda</li>
+                  <li>Canal oficial: soporte.turefugio@gmail.com</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="info-block info-block-split">
+            <article class="info-security-panel">
+              <div class="info-block-head">
+                <h3>Seguridad y confianza</h3>
+                <p>Principios de operación para una experiencia segura y verificable</p>
+              </div>
+              <div class="info-security-grid">
+                <div><strong>Reservas seguras</strong><p>Sistema de pago protegido y encriptado.</p></div>
+                <div><strong>Datos protegidos</strong><p>Información personal bajo estándares de seguridad.</p></div>
+                <div><strong>Usuarios verificados</strong><p>Proceso de verificación de identidad.</p></div>
+                <div><strong>Valoraciones reales</strong><p>Solo usuarios con reservas confirmadas.</p></div>
+                <div><strong>Soporte permanente</strong><p>Asistencia disponible para acompañar casos reportados.</p></div>
+              </div>
+            </article>
+
+            <article class="info-policies-panel">
+              <div class="info-block-head">
+                <h3>Políticas y datos relevantes</h3>
+                <p>Reglas visibles que orientan la operación de la plataforma</p>
+              </div>
+              <ul class="info-policy-list">
+                <li><strong>Tarifa operativa de la plataforma:</strong> Tu Refugio aplica una comisión del 15% por reserva confirmada.</li>
+                <li><strong>Distribución económica:</strong> El 85% restante corresponde al alojamiento.</li>
+                <li><strong>Cancelaciones:</strong> Pueden contemplar devolución parcial o total según la política visible del alojamiento.</li>
+                <li><strong>Confianza:</strong> Se prioriza trazabilidad de pagos, reseñas verificadas y control de sesiones.</li>
+                <li><strong>Soporte:</strong> Correo oficial de contacto: soporte.turefugio@gmail.com.</li>
+              </ul>
+            </article>
+          </section>
+
+          <section class="info-block">
+            <div class="info-block-head">
+              <h3>Recomendaciones y alertas</h3>
+              <p>Indicadores dinámicos construidos con información actual de la plataforma</p>
+            </div>
+            <div class="info-alert-grid" id="info-alert-grid-dinamico">
+              <article>
+                <strong>Alojamientos publicados</strong>
+                <p id="alert-total-alojamientos">Cargando información actual...</p>
+              </article>
+              <article>
+                <strong>Rango de precios detectado</strong>
+                <p id="alert-rango-precios">Cargando información actual...</p>
+              </article>
+              <article>
+                <strong>Calificación promedio observada</strong>
+                <p id="alert-calificacion-promedio">Cargando información actual...</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="info-block">
+            <div class="info-block-head">
+              <h3>Centro de ayuda</h3>
+              <p>Haz clic en cada opción para desplegar o plegar el contenido</p>
+            </div>
+            <div class="info-help-actions">
+              <button class="info-help-toggle" type="button" data-help-target="help-guia">Guía de uso</button>
+              <button class="info-help-toggle" type="button" data-help-target="help-faq">Preguntas frecuentes</button>
+              <button class="info-help-toggle" type="button" data-help-target="help-soporte">Soporte técnico</button>
+              <button class="info-help-toggle" type="button" data-help-target="help-terminos">Términos y condiciones</button>
+            </div>
+            <div class="info-help-panels" id="info-help-panels">
+              <article id="help-guia" class="info-help-panel" hidden>
+                <h4>Guía de uso</h4>
+                <p>Explora alojamientos, filtra por tus preferencias, revisa políticas y finaliza tu reserva en pocos pasos con trazabilidad de la transacción.</p>
+              </article>
+              <article id="help-faq" class="info-help-panel" hidden>
+                <h4>Preguntas frecuentes</h4>
+                <p>Resolvemos dudas sobre métodos de pago, cancelaciones, validación de reseñas, disponibilidad de habitaciones y tiempos de confirmación.</p>
+              </article>
+              <article id="help-soporte" class="info-help-panel" hidden>
+                <h4>Soporte técnico</h4>
+                <p>Canal oficial de comunicación: <a href="mailto:soporte.turefugio@gmail.com">soporte.turefugio@gmail.com</a>. Incluye referencia, fecha y descripción del caso para una atención ágil.</p>
+              </article>
+              <article id="help-terminos" class="info-help-panel" hidden>
+                <h4>Términos y condiciones</h4>
+                <p>Las reservas, cancelaciones, comisiones y devoluciones se rigen por políticas transparentes visibles en la plataforma y asociadas al alojamiento seleccionado.</p>
+              </article>
+            </div>
+          </section>
         </div>
       </div>
     </section>
@@ -62,5 +288,13 @@
   </footer>
 
   <script src="index.js"></script>
+  <script src="/js/chatbot-float.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

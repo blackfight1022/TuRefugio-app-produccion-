@@ -33,10 +33,8 @@ function normalizarRutaImagen(rutaOriginal) {
 }
 
 function construirUrlImagen(rutaOriginal) {
-function construirUrlImagen(rutaOriginal) {
   const base = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}`;
   return `${base}/${normalizarRutaImagen(rutaOriginal)}`;
-}
 }
 
 function formatearFechaReserva(valor) {
@@ -63,6 +61,59 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formEditarPerfil) {
     formEditarPerfil.addEventListener('submit', guardarEdicionPerfil);
   }
+
+  const formCambiarContrasena = document.getElementById('form-cambiar-contrasena');
+  if (formCambiarContrasena) {
+    formCambiarContrasena.addEventListener('submit', cambiarContrasena);
+  }
+
+  document.getElementById('btnEditarPerfil')?.addEventListener('click', editarPerfil);
+  document.getElementById('btnCerrarSesionTurista')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    cerrarSesion();
+  });
+  document.getElementById('btnCerrarChatbotTurista')?.addEventListener('click', cerrarChatbot);
+  document.getElementById('btnEnviarCorreoTurista')?.addEventListener('click', enviarCorreoTurista);
+  document.getElementById('btnConfirmarCodigoTurista')?.addEventListener('click', confirmarCodigoTurista);
+
+  document.addEventListener('click', (event) => {
+    const panelLink = event.target.closest('[data-panel-destino]');
+    if (panelLink) {
+      event.preventDefault();
+      mostrarPanel(panelLink.dataset.panelDestino);
+      return;
+    }
+
+    const closeModalBtn = event.target.closest('[data-close-modal]');
+    if (closeModalBtn) {
+      cerrarModal(closeModalBtn.dataset.closeModal);
+      return;
+    }
+
+    const cancelarReservaBtn = event.target.closest('[data-cancelar-reserva-id]');
+    if (cancelarReservaBtn) {
+      abrirCancelacion(Number(cancelarReservaBtn.dataset.cancelarReservaId));
+      return;
+    }
+
+    const reservaOpcion = event.target.closest('[data-chatbot-reserva-index]');
+    if (reservaOpcion) {
+      seleccionarReservaChatbot(Number(reservaOpcion.dataset.chatbotReservaIndex));
+      return;
+    }
+
+    const motivoBtn = event.target.closest('[data-chatbot-motivo]');
+    if (motivoBtn) {
+      enviarMotivoCancelacion(motivoBtn.dataset.chatbotMotivo);
+      return;
+    }
+
+    const marcarLeidoBtn = event.target.closest('[data-marcar-leido-id]');
+    if (marcarLeidoBtn) {
+      marcarLeido(Number(marcarLeidoBtn.dataset.marcarLeidoId));
+      return;
+    }
+  });
   
   cargarDatosUsuario();
   cargarHistorialReservas();
@@ -172,9 +223,12 @@ async function editarPerfil() {
   document.getElementById('perfil-tipo-documento').value = usuarioActual.tipo_documento || '';
   document.getElementById('perfil-numero-documento').value = usuarioActual.numero_documento || '';
   document.getElementById('perfil-direccion').value = usuarioActual.direccion || '';
-  document.getElementById('perfil-contrasena-actual').value = '';
-  document.getElementById('perfil-contrasena-nueva').value = '';
-  document.getElementById('perfil-contrasena-confirmar').value = '';
+  const campoActual = document.getElementById('perfil-contrasena-actual');
+  const campoNueva = document.getElementById('perfil-contrasena-nueva');
+  const campoConfirmar = document.getElementById('perfil-contrasena-confirmar');
+  if (campoActual) campoActual.value = '';
+  if (campoNueva) campoNueva.value = '';
+  if (campoConfirmar) campoConfirmar.value = '';
   limpiarFeedbackPerfil();
 
   const modal = document.getElementById('modal-editar-perfil');
@@ -191,26 +245,6 @@ async function guardarEdicionPerfil(event) {
   const tipoDocumento = document.getElementById('perfil-tipo-documento')?.value || '';
   const numeroDocumento = document.getElementById('perfil-numero-documento')?.value || '';
   const direccion = document.getElementById('perfil-direccion')?.value || '';
-  const contrasenaActual = document.getElementById('perfil-contrasena-actual')?.value || '';
-  const contrasenaNueva = document.getElementById('perfil-contrasena-nueva')?.value || '';
-  const contrasenaConfirmar = document.getElementById('perfil-contrasena-confirmar')?.value || '';
-
-  // Validación opcional de contraseña
-  if (contrasenaActual || contrasenaNueva || contrasenaConfirmar) {
-    if (!contrasenaActual) {
-      return mostrarFeedbackPerfil('Ingresa tu contraseña actual para cambiarla.', 'error');
-    }
-    if (!contrasenaNueva) {
-      return mostrarFeedbackPerfil('Ingresa la nueva contraseña.', 'error');
-    }
-    if (contrasenaNueva.length < 6) {
-      return mostrarFeedbackPerfil('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
-    }
-    if (contrasenaNueva !== contrasenaConfirmar) {
-      return mostrarFeedbackPerfil('Las contraseñas nuevas no coinciden.', 'error');
-    }
-  }
-
   const cuerpo = {
     nombre: String(nombre).trim(),
     telefono: String(telefono).trim(),
@@ -218,10 +252,6 @@ async function guardarEdicionPerfil(event) {
     numero_documento: String(numeroDocumento).trim(),
     direccion: String(direccion).trim()
   };
-  if (contrasenaActual && contrasenaNueva) {
-    cuerpo.contrasena_actual = contrasenaActual;
-    cuerpo.contrasena_nueva = contrasenaNueva;
-  }
 
   try {
     const res = await fetch(`${API_URL}/auth/me`, {
@@ -319,50 +349,152 @@ function mostrarHistorial() {
     contenedor.innerHTML = '<p class="sin-datos">No tienes reservas aún.</p>';
     return;
   }
-  
-  contenedor.innerHTML = reservasActuales.map(reserva => `
+
+  const formatoMoneda = (valor) => {
+    const n = Number(valor);
+    if (!Number.isFinite(n)) return '$0';
+    return `$${n.toLocaleString('es-CO')}`;
+  };
+
+  const normalizarEstadoPago = (valor, reserva) => {
+    const estado = String(valor || '').trim().toLowerCase();
+    const estadoReserva = String(reserva?.estado || '').trim().toLowerCase();
+    const porcentajeReembolso = Number(reserva?.cancelacion_porcentaje_reembolso);
+
+    if (estadoReserva === 'cancelada') {
+      if (estado === 'reembolsado' || (Number.isFinite(porcentajeReembolso) && porcentajeReembolso > 0)) {
+        return 'REEMBOLSADO';
+      }
+      return 'CANCELADO';
+    }
+
+    if (estado === 'pagado' || estado === 'pago' || estado === 'aprobado') return 'PAGO CONFIRMADO';
+    if (estado === 'rechazado') return 'PAGO RECHAZADO';
+    if (estado === 'cancelado') return 'PAGO CANCELADO';
+    if (estado === 'reembolsado') return 'REEMBOLSADO';
+    return 'PENDIENTE';
+  };
+
+  contenedor.innerHTML = reservasActuales.map(reserva => {
+    const estadoVisual = obtenerEstadoVisualReserva(reserva);
+    const finalizada = esReservaFinalizada(reserva);
+    const estadoReserva = String(reserva?.estado || '').toLowerCase();
+    const esCancelada = estadoReserva === 'cancelada';
+    const alojamientoNombre = reserva.alojamiento_nombre || reserva.alojamiento || 'No registrado';
+    const habitacionNombre = reserva.habitacion_nombre || reserva.habitacion || 'N/A';
+    const referenciaPago = reserva.referencia_pago || 'N/A';
+    const entrada = reserva.fecha_entrada || 'N/A';
+    const salida = reserva.fecha_salida || 'N/A';
+    const noches = Number(reserva.noches) > 0 ? Number(reserva.noches) : calcularNoches(reserva.fecha_entrada, reserva.fecha_salida);
+    const hospedaje = Number.isFinite(Number(reserva.valor_hospedaje)) ? Number(reserva.valor_hospedaje) : Number(reserva.subtotal_hospedaje || 0);
+    const servicios = Number.isFinite(Number(reserva.valor_servicios)) ? Number(reserva.valor_servicios) : Number(reserva.subtotal_servicios || 0);
+    const descuento = Number.isFinite(Number(reserva.descuento)) ? Number(reserva.descuento) : 0;
+    const total = Number.isFinite(Number(reserva.total)) ? Number(reserva.total) : Number(reserva.precio_total || 0);
+    const estadoPago = normalizarEstadoPago(reserva.estado_pago, reserva);
+    const porcentajeReembolso = Number(reserva.cancelacion_porcentaje_reembolso);
+    const porcentajeValido = Number.isFinite(porcentajeReembolso) && porcentajeReembolso >= 0 && porcentajeReembolso <= 100;
+    const montoDevolucion = porcentajeValido ? (total * porcentajeReembolso) / 100 : null;
+    const montoDescuentoCancelacion = porcentajeValido ? Math.max(total - montoDevolucion, 0) : null;
+
+    return `
     <div class="tarjeta-reserva">
       <div class="reserva-header">
         <h3>Reserva #${reserva.id}</h3>
-        <span class="estado-badge estado-${reserva.estado}">${reserva.estado.toUpperCase()}</span>
+        <span class="estado-badge estado-${estadoVisual.clase}">${estadoVisual.texto}</span>
       </div>
       
       <div class="reserva-detalles">
         <div class="detalle-col">
-          <p><strong>Alojamiento:</strong> ${reserva.alojamiento_nombre || 'N/A'}</p>
-          <p><strong>Habitación:</strong> ${reserva.habitacion_nombre || 'N/A'}</p>
-          <p><strong>Referencia Pago:</strong> ${reserva.referencia_pago || 'N/A'}</p>
+          <p><strong>Alojamiento:</strong> ${alojamientoNombre}</p>
+          <p><strong>Habitación:</strong> ${habitacionNombre}</p>
+          <p><strong>Referencia Pago:</strong> ${referenciaPago}</p>
         </div>
         
         <div class="detalle-col">
-          <p><strong>Entrada:</strong> ${reserva.fecha_entrada}</p>
-          <p><strong>Salida:</strong> ${reserva.fecha_salida}</p>
-          <p><strong>Noches:</strong> ${calcularNoches(reserva.fecha_entrada, reserva.fecha_salida)}</p>
+          <p><strong>Entrada:</strong> ${entrada}</p>
+          <p><strong>Salida:</strong> ${salida}</p>
+          <p><strong>Noches:</strong> ${noches}</p>
         </div>
         
         <div class="detalle-col">
-          <p><strong>Hospedaje:</strong> $${reserva.valor_hospedaje?.toLocaleString() || '0'}</p>
-          <p><strong>Servicios:</strong> $${reserva.valor_servicios?.toLocaleString() || '0'}</p>
-          <p><strong>Descuento:</strong> -$${reserva.descuento?.toLocaleString() || '0'}</p>
+          <p><strong>Hospedaje:</strong> ${formatoMoneda(hospedaje)}</p>
+          <p><strong>Servicios:</strong> ${formatoMoneda(servicios)}</p>
+          <p><strong>Descuento:</strong> -${formatoMoneda(descuento)}</p>
         </div>
         
         <div class="detalle-col">
-          <p><strong>Total:</strong> <span class="total-monto">$${reserva.total?.toLocaleString() || '0'}</span></p>
-          <p><strong>Estado Pago:</strong> ${reserva.estado_pago || 'N/A'}</p>
+          <p><strong>Total:</strong> <span class="total-monto">${formatoMoneda(total)}</span></p>
+          <p><strong>Estado Pago:</strong> ${estadoPago}</p>
         </div>
       </div>
-      
-      ${reserva.estado !== 'cancelada' ? `
-        <button onclick="abrirCancelacion(${reserva.id})" class="btn-secundario">Cancelar Reserva</button>
+
+      ${finalizada
+        ? `<div class="reserva-finalizada-ok">✅ Reserva finalizada con exito.</div>`
+        : reserva.estado !== 'cancelada' ? `
+        <button type="button" data-cancelar-reserva-id="${reserva.id}" class="btn-secundario">Cancelar Reserva</button>
+      ` : ''}
+
+      ${esCancelada ? `
+      <div class="reserva-finalizada-ok" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412;">
+        <p><strong>Descuento por cancelación:</strong> ${montoDescuentoCancelacion === null ? 'Pendiente de definir' : formatoMoneda(montoDescuentoCancelacion)}</p>
+        <p><strong>Dinero a devolver al turista:</strong> ${montoDevolucion === null ? 'Pendiente de definir' : formatoMoneda(montoDevolucion)}</p>
+        <p><strong>Porcentaje de devolución:</strong> ${porcentajeValido ? `${porcentajeReembolso}%` : 'Pendiente'}</p>
+      </div>
       ` : ''}
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function calcularNoches(entrada, salida) {
   const inicio = new Date(entrada);
   const fin = new Date(salida);
   return Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24));
+}
+
+function obtenerFinDeReserva(fechaSalida) {
+  if (!fechaSalida) return null;
+  const texto = String(fechaSalida).trim();
+  if (!texto) return null;
+
+  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(texto)
+    ? new Date(`${texto}T23:59:59`)
+    : new Date(texto);
+
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+
+function esReservaFinalizada(reserva) {
+  const estado = String(reserva?.estado || '').toLowerCase();
+  if (estado === 'cancelada') return false;
+  if (estado === 'finalizada') return true;
+
+  const finReserva = obtenerFinDeReserva(reserva?.fecha_salida);
+  if (!finReserva) return false;
+  return Date.now() > finReserva.getTime();
+}
+
+function obtenerEstadoVisualReserva(reserva) {
+  const estado = String(reserva?.estado || 'pendiente').toLowerCase();
+
+  if (estado === 'cancelada') {
+    return {
+      clase: 'cancelada',
+      texto: 'CANCELADA'
+    };
+  }
+
+  if (esReservaFinalizada(reserva)) {
+    return {
+      clase: 'finalizada',
+      texto: 'FINALIZADA CON EXITO'
+    };
+  }
+
+  return {
+    clase: estado,
+    texto: estado.toUpperCase()
+  };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -448,13 +580,14 @@ async function enviarCorreoTurista() {
     }
     
     const reservas = Array.isArray(payload.reservas) ? payload.reservas : [];
-    if (reservas.length === 0) {
+    const reservasCancelables = reservas.filter((reserva) => !esReservaFinalizada(reserva) && String(reserva?.estado || '').toLowerCase() !== 'cancelada');
+    if (reservasCancelables.length === 0) {
       agregarMensajeChatbot('bot', `ℹ️ ${payload.mensaje || 'No encontramos reservas activas con ese correo. Puedes intentar con otro.'}`);
       return;
     }
 
     chatbotState.emailTurista = email;
-    chatbotState.reservasDisponibles = reservas;
+    chatbotState.reservasDisponibles = reservasCancelables;
     
     mostrarReservasChatbot();
   } catch (error) {
@@ -479,7 +612,7 @@ function mostrarReservasChatbot() {
   
   chatbotState.reservasDisponibles.forEach((res, idx) => {
     reservasHtml += `
-      <div class="reserva-opcion" onclick="seleccionarReservaChatbot(${idx})" style="cursor:pointer; padding:10px; margin:10px 0; background:#f0f0f0; border-radius:5px; border-left:4px solid #ff6b6b;">
+      <div class="reserva-opcion" data-chatbot-reserva-index="${idx}" style="cursor:pointer; padding:10px; margin:10px 0; background:#f0f0f0; border-radius:5px; border-left:4px solid #ff6b6b;">
         <p><strong>Reserva #${res.id}</strong> - ${res.alojamiento_nombre}</p>
         <p>Fechas: ${res.fecha_entrada} a ${res.fecha_salida}</p>
         <p>Total: $${Number(res.precio_total || 0).toLocaleString('es-CO')}</p>
@@ -503,10 +636,10 @@ function seleccionarReservaChatbot(index) {
     <div class="mensaje bot">
       <p>Entendido. ¿Cuál es el motivo de tu cancelación?</p>
       <div style="margin-top:10px;">
-        <button onclick="enviarMotivoCancelacion('Cambio de planes')" style="margin:5px; padding:8px 15px; cursor:pointer;">Cambio de planes</button>
-        <button onclick="enviarMotivoCancelacion('Emergencia personal')" style="margin:5px; padding:8px 15px; cursor:pointer;">Emergencia personal</button>
-        <button onclick="enviarMotivoCancelacion('Problema de salud')" style="margin:5px; padding:8px 15px; cursor:pointer;">Problema de salud</button>
-        <button onclick="enviarMotivoCancelacion('Otro')" style="margin:5px; padding:8px 15px; cursor:pointer;">Otro motivo</button>
+        <button type="button" data-chatbot-motivo="Cambio de planes" style="margin:5px; padding:8px 15px; cursor:pointer;">Cambio de planes</button>
+        <button type="button" data-chatbot-motivo="Emergencia personal" style="margin:5px; padding:8px 15px; cursor:pointer;">Emergencia personal</button>
+        <button type="button" data-chatbot-motivo="Problema de salud" style="margin:5px; padding:8px 15px; cursor:pointer;">Problema de salud</button>
+        <button type="button" data-chatbot-motivo="Otro" style="margin:5px; padding:8px 15px; cursor:pointer;">Otro motivo</button>
       </div>
     </div>
   `;
@@ -621,10 +754,17 @@ async function confirmarCodigoTurista() {
 }
 
 function abrirCancelacion(reservaId) {
-  mostrarPanel('gestion-reservas');
-  
   const reserva = reservasActuales.find(r => r.id === reservaId);
-  if (reserva && usuarioActual) {
+  if (!reserva) return;
+
+  if (esReservaFinalizada(reserva)) {
+    alert('Esta reserva ya finalizo con exito. Ya no es posible cancelarla.');
+    return;
+  }
+
+  mostrarPanel('gestion-reservas');
+
+  if (usuarioActual) {
     document.getElementById('email-turista').value = usuarioActual.correo;
     setTimeout(() => enviarCorreoTurista(), 500);
   }
@@ -676,7 +816,7 @@ function mostrarMensajes(mensajes) {
           </div>
         ` : ''}
       </div>
-      <button onclick="marcarLeido(${msg.id})" class="btn-pequeno">
+      <button type="button" data-marcar-leido-id="${msg.id}" class="btn-pequeno">
         ${msg.leido ? '✓ Leído' : 'Marcar como Leído'}
       </button>
     </div>
@@ -700,7 +840,7 @@ async function marcarLeido(mensajeId) {
 // ════════════════════════════════════════════════════════════════
 async function cargarFavoritos() {
   try {
-    const res = await fetch(`${API_URL}/alojamientos/mis-favoritos`, { headers });
+    const res = await fetch(`${API_URL}/favoritos`, { headers });
     if (!res.ok) return;
     
     const response = await res.json();
@@ -720,10 +860,143 @@ function mostrarFavoritos(alojamientos) {
   }
   
   galeria.innerHTML = alojamientos.map(aloj => `
-    <div class="favorito-item" onclick="window.location.href='../detalles_alojamiento/detalles.html?id=${aloj.id}'" style="cursor:pointer;">
-      <img src="${construirUrlImagen(aloj.imagen_principal || aloj.imagen)}" alt="${aloj.titulo}">
+    <div class="favorito-item" data-favorito-aloj-id="${aloj.id}">
+      <div class="favorito-imagen-container">
+        <img src="${construirUrlImagen(aloj.imagen_principal || aloj.imagen)}" alt="${aloj.titulo}" class="favorito-imagen">
+        <span class="favorito-estado-pill" aria-label="En favoritos">❤️ En favoritos</span>
+        <div class="favorito-overlay">
+          <button class="btn-favorito-accion btn-mantener-favorito" data-aloj-id="${aloj.id}" title="Conservar en favoritos">❤️ Mantener</button>
+          <button class="btn-favorito-accion btn-ver-detalles" data-aloj-id="${aloj.id}" title="Ver detalles">👁️ Ver</button>
+          <button class="btn-favorito-accion btn-quitar-favorito" data-aloj-id="${aloj.id}" title="Quitar de favoritos">❌</button>
+        </div>
+      </div>
+      <div class="favorito-titulo">${aloj.titulo || 'Alojamiento'}</div>
     </div>
   `).join('');
+  
+  // Agregar event listeners a los botones
+  document.querySelectorAll('.btn-ver-detalles').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const alojId = btn.dataset.alojId;
+      window.location.href = `../detalles_alojamiento/detalles.html?id=${alojId}`;
+    });
+  });
+
+  document.querySelectorAll('.btn-mantener-favorito').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const alojId = btn.dataset.alojId;
+      await mantenerEnFavoritos(alojId);
+    });
+  });
+  
+  document.querySelectorAll('.btn-quitar-favorito').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const alojId = btn.dataset.alojId;
+      quitarDeFavoritos(alojId);
+    });
+  });
+}
+
+async function quitarDeFavoritos(alojId) {
+  const confirmado = await Swal.fire({
+    title: '¿Quitar de favoritos?',
+    text: 'Este alojamiento dejará de aparecer en tu panel de favoritos.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, quitar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!confirmado.isConfirmed) return;
+
+  try {
+    const res = await fetch(`${API_URL}/favoritos/${alojId}`, {
+      method: 'DELETE',
+      headers
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.mensaje || 'No se pudo eliminar el favorito.');
+    }
+
+    const tarjeta = document.querySelector(`[data-favorito-aloj-id="${alojId}"]`);
+    if (tarjeta) {
+      const pill = tarjeta.querySelector('.favorito-estado-pill');
+      if (pill) {
+        pill.textContent = '❌ Eliminado';
+        pill.classList.add('favorito-estado-pill-eliminado');
+      }
+      tarjeta.classList.add('favorito-item-removiendo');
+      await new Promise((resolve) => setTimeout(resolve, 520));
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Favorito eliminado',
+      text: 'El alojamiento fue retirado de tu lista.',
+      timer: 1200,
+      showConfirmButton: false
+    });
+
+    if (tarjeta) {
+      tarjeta.remove();
+      const galeria = document.getElementById('galeria-favoritos');
+      if (galeria && !galeria.querySelector('.favorito-item')) {
+        galeria.innerHTML = '<p>Aún no tienes favoritos</p>';
+      }
+    } else {
+      cargarFavoritos();
+    }
+  } catch (error) {
+    console.error('Error quitando favorito:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'No se pudo quitar de favoritos.'
+    });
+  }
+}
+
+async function mantenerEnFavoritos(alojId) {
+  try {
+    const res = await fetch(`${API_URL}/favoritos/${alojId}`, {
+      method: 'POST',
+      headers
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.mensaje || 'No se pudo conservar el favorito.');
+    }
+
+    const tarjeta = document.querySelector(`[data-favorito-aloj-id="${alojId}"]`);
+    const pill = tarjeta?.querySelector('.favorito-estado-pill');
+    if (pill) {
+      pill.textContent = '❤️ En favoritos';
+      pill.classList.remove('favorito-estado-pill-eliminado');
+      pill.classList.add('favorito-estado-pill-activo');
+      setTimeout(() => pill.classList.remove('favorito-estado-pill-activo'), 700);
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Sigue en favoritos',
+      text: 'Este alojamiento se mantiene en tu lista.',
+      timer: 1000,
+      showConfirmButton: false
+    });
+  } catch (error) {
+    console.error('Error conservando favorito:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'No se pudo conservar en favoritos.'
+    });
+  }
 }
 
 // ════════════════════════════════════════════════════════════════

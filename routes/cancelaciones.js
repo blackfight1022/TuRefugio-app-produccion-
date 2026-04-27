@@ -28,6 +28,10 @@ function generarCodigo() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function generarReferenciaReembolso(reservaId) {
+  return `REF-${reservaId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+}
+
 /**
  * POST /api/cancelaciones/iniciar
  * Inicia el proceso de cancelación
@@ -238,7 +242,7 @@ router.post('/por-email', (req, res) => {
  * Body: { cancelacion_id, porcentaje_devolucion, motivo_descuento }
  */
 router.post('/aplicar-refund', verificarToken, (req, res) => {
-  const { cancelacion_id, porcentaje_devolucion, motivo_descuento } = req.body;
+  const { cancelacion_id, porcentaje_devolucion, motivo_descuento, metodo_reembolso, pasarela_reembolso } = req.body;
   const actor = req.user.id;
 
   if (!cancelacion_id || porcentaje_devolucion === undefined) {
@@ -313,109 +317,183 @@ router.post('/aplicar-refund', verificarToken, (req, res) => {
     }
 
     const monto_devuelto = (Number(cancelacion.precio_total || 0) * pct) / 100;
+    const metodoReembolso = String(metodo_reembolso || 'pse').trim().toLowerCase();
+    const pasarelaReembolso = String(pasarela_reembolso || 'wompi').trim().toLowerCase() || 'wompi';
+    const metodosValidos = new Set(['tarjeta', 'nequi', 'daviplata', 'pse']);
 
-      // Actualizar cancelación
-      const updateCancelacionSql = `
-        UPDATE cancelaciones 
-        SET estado = 'confirmada', 
-            porcentaje_devolucion = ?,
-            motivo_descuento = ?,
-            fecha_confirmacion = datetime('now')
-        WHERE id = ?
-      `;
+    if (!metodosValidos.has(metodoReembolso)) {
+      return res.status(400).json({
+        status: 'error',
+        mensaje: 'Metodo de reembolso no permitido'
+      });
+    }
 
-      db.run(updateCancelacionSql, [pct, motivo_descuento || 'Sin observaciones', cancelacion_id], (err) => {
-        if (err) {
-          console.error('Error al actualizar cancelación:', err);
-          return res.status(500).json({
-            status: 'error',
-            mensaje: 'Error al confirmar cancelación'
-          });
-        }
-
-        // Actualizar reserva a cancelada
-        const updateReservaSql = `
-          UPDATE reservas
-          SET estado = 'cancelada',
-              cancelacion_motivo = ?,
-              cancelacion_porcentaje_reembolso = ?,
-              cancelada_por = ?
-          WHERE id = ?
-        `;
-
-        db.run(
-          updateReservaSql,
-          [cancelacion.motivo || 'Cancelada por solicitud del turista', pct, req.user.rol === 'admin' ? 'admin' : 'anfitrion', cancelacion.reserva_id],
-          (err) => {
-          if (err) {
-            console.error('Error al actualizar reserva:', err);
-            return res.status(500).json({
-              status: 'error',
-              mensaje: 'Error al actualizar reserva'
-            });
+    const ejecutarConfirmacionCancelacion = (detalleRefund) => {
+      db.run(
+        `UPDATE cancelaciones
+         SET estado = 'confirmada',
+             porcentaje_devolucion = ?,
+             motivo_descuento = ?,
+             fecha_confirmacion = datetime('now', 'localtime')
+         WHERE id = ?`,
+        [pct, motivo_descuento || 'Sin observaciones', cancelacion_id],
+        (upCancelErr) => {
+          if (upCancelErr) {
+            console.error('Error al actualizar cancelación:', upCancelErr);
+            return res.status(500).json({ status: 'error', mensaje: 'Error al confirmar cancelación' });
           }
 
-          // Crear mensaje de notificación para el turista
-          const mensajeSql = `
-            INSERT INTO mensajes 
-            (turista_id, asunto, contenido, tipo, reserva_id, porcentaje_devolucion, motivo_descuento, estado, leido)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `;
-
-          const asunto = `Cancelación confirmada - ${cancelacion.alojamiento_nombre}`;
-          const contenido = `Tu solicitud de cancelación ha sido confirmada. Se te devolvera el ${pct}% de tu pago.`;
-
-          db.run(mensajeSql, [
-            cancelacion.turista_id,
-            asunto,
-            contenido,
-            'cancelacion',
-            cancelacion.reserva_id,
-            pct,
-            motivo_descuento || 'Sin observaciones',
-            'pendiente',
-            0
-          ], (err) => {
-            if (err) {
-              console.error('Error al crear mensaje:', err);
-              // No descartar por este error, continuar
-            }
-
-            // Enviar email de confirmación al turista
-            const htmlContent = `
-              <h2>Cancelación Confirmada</h2>
-              <p>Tu solicitud de cancelación ha sido aprobada.</p>
-              <p><strong>Alojamiento:</strong> ${cancelacion.alojamiento_nombre}</p>
-              <p><strong>Habitacion:</strong> ${cancelacion.habitacion_nombre || '-'}</p>
-              <p><strong>Fechas:</strong> ${cancelacion.fecha_entrada || '-'} a ${cancelacion.fecha_salida || '-'}</p>
-              <p><strong>Monto a devolver:</strong> $${monto_devuelto.toFixed(2)} (${pct}% de $${Number(cancelacion.precio_total || 0).toFixed(2)})</p>
-              <p><strong>Motivo del descuento:</strong> ${motivo_descuento || 'Sin observaciones'}</p>
-              <p>El reembolso será procesado en los próximos 5-7 días hábiles.</p>
-            `;
-
-            if (cancelacion.email_turista) {
-              const mailerConf = crearTransporter();
-              if (mailerConf) {
-                mailerConf.sendMail({
-                  from: SMTP_FROM,
-                  to: cancelacion.email_turista,
-                  subject: asunto,
-                  html: htmlContent
-                }, (error) => {
-                  if (error) console.error('Error al enviar email de confirmación:', error);
-                });
+          db.run(
+            `UPDATE reservas
+             SET estado = 'cancelada',
+                 cancelacion_motivo = ?,
+                 cancelacion_porcentaje_reembolso = ?,
+                 cancelada_por = ?
+             WHERE id = ?`,
+            [cancelacion.motivo || 'Cancelada por solicitud del turista', pct, req.user.rol === 'admin' ? 'admin' : 'anfitrion', cancelacion.reserva_id],
+            (upReservaErr) => {
+              if (upReservaErr) {
+                console.error('Error al actualizar reserva:', upReservaErr);
+                return res.status(500).json({ status: 'error', mensaje: 'Error al actualizar reserva' });
               }
-            }
 
-            res.status(200).json({
-              status: 'success',
-              mensaje: 'Cancelación confirmada y notificación enviada',
-              monto_devuelto: monto_devuelto
-            });
-          });
+              db.run(
+                `UPDATE pagos
+                 SET estado = 'rechazado'
+                 WHERE id_reserva = ?
+                   AND COALESCE(estado, '') = 'pendiente'`,
+                [cancelacion.reserva_id],
+                (pagoErr) => {
+                  if (pagoErr) {
+                    console.error('Error al actualizar pagos pendientes de reserva cancelada:', pagoErr);
+                  }
+
+                  const asunto = `Cancelación confirmada - ${cancelacion.alojamiento_nombre}`;
+                  const contenido = `Tu solicitud de cancelación ha sido confirmada. Se te devolvera el ${pct}% de tu pago.`;
+
+                  db.run(
+                    `INSERT INTO mensajes
+                     (turista_id, asunto, contenido, tipo, reserva_id, porcentaje_devolucion, motivo_descuento, estado, leido)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                      cancelacion.turista_id,
+                      asunto,
+                      contenido,
+                      'cancelacion',
+                      cancelacion.reserva_id,
+                      pct,
+                      motivo_descuento || 'Sin observaciones',
+                      'pendiente',
+                      0
+                    ],
+                    (msgErr) => {
+                      if (msgErr) {
+                        console.error('Error al crear mensaje:', msgErr);
+                      }
+
+                      const htmlContent = `
+                        <h2>Cancelación Confirmada</h2>
+                        <p>Tu solicitud de cancelación ha sido aprobada.</p>
+                        <p><strong>Alojamiento:</strong> ${cancelacion.alojamiento_nombre}</p>
+                        <p><strong>Habitacion:</strong> ${cancelacion.habitacion_nombre || '-'}</p>
+                        <p><strong>Fechas:</strong> ${cancelacion.fecha_entrada || '-'} a ${cancelacion.fecha_salida || '-'}</p>
+                        <p><strong>Monto a devolver:</strong> $${monto_devuelto.toFixed(2)} (${pct}% de $${Number(cancelacion.precio_total || 0).toFixed(2)})</p>
+                        <p><strong>Pasarela:</strong> ${pasarelaReembolso.toUpperCase()} | <strong>Método:</strong> ${metodoReembolso.toUpperCase()}</p>
+                        ${detalleRefund ? `<p><strong>Referencia devolución:</strong> ${detalleRefund.referencia}</p>` : ''}
+                        <p><strong>Motivo del descuento:</strong> ${motivo_descuento || 'Sin observaciones'}</p>
+                        <p>El reembolso será procesado en los próximos 5-7 días hábiles.</p>
+                      `;
+
+                      if (cancelacion.email_turista) {
+                        const mailerConf = crearTransporter();
+                        if (mailerConf) {
+                          mailerConf.sendMail({
+                            from: SMTP_FROM,
+                            to: cancelacion.email_turista,
+                            subject: asunto,
+                            html: htmlContent
+                          }, (mailErr) => {
+                            if (mailErr) console.error('Error al enviar email de confirmación:', mailErr);
+                          });
+                        }
+                      }
+
+                      return res.status(200).json({
+                        status: 'success',
+                        mensaje: 'Cancelación confirmada y reembolso registrado por pasarela.',
+                        monto_devuelto,
+                        detalle_reembolso: detalleRefund
+                      });
+                    }
+                  );
+                }
+              );
+            }
+          );
         }
       );
-    });
+    };
+
+    if (pct <= 0) {
+      return ejecutarConfirmacionCancelacion(null);
+    }
+
+    db.get(
+      `SELECT id
+       FROM pagos
+       WHERE id_reserva = ?
+         AND COALESCE(estado, '') = 'pagado'
+         AND COALESCE(monto, 0) > 0
+       ORDER BY datetime(fecha) DESC, id DESC
+       LIMIT 1`,
+      [cancelacion.reserva_id],
+      (pagoBaseErr, pagoBase) => {
+        if (pagoBaseErr) {
+          console.error('Error validando pago base para reembolso:', pagoBaseErr);
+          return res.status(500).json({ status: 'error', mensaje: 'Error validando el pago de la reserva.' });
+        }
+
+        if (!pagoBase) {
+          return res.status(400).json({
+            status: 'error',
+            mensaje: 'No existe un pago aprobado para esta reserva; no se puede procesar devolución.'
+          });
+        }
+
+        const referenciaReembolso = generarReferenciaReembolso(cancelacion.reserva_id);
+        const transaccionReembolso = `refund-sim-${Date.now()}`;
+
+        db.run(
+          `INSERT INTO pagos (
+            id_reserva, monto, metodo_pago, estado, referencia_pago, pasarela, transaccion_externa
+          ) VALUES (?, ?, ?, 'pagado', ?, ?, ?)`,
+          [
+            cancelacion.reserva_id,
+            -Math.abs(Number(monto_devuelto || 0)),
+            metodoReembolso,
+            referenciaReembolso,
+            pasarelaReembolso,
+            transaccionReembolso
+          ],
+          (refundErr) => {
+            if (refundErr) {
+              console.error('Error registrando reembolso en pasarela simulada:', refundErr);
+              return res.status(500).json({
+                status: 'error',
+                mensaje: 'La cancelación fue aplicada, pero falló el registro del reembolso en pasarela.'
+              });
+            }
+
+            return ejecutarConfirmacionCancelacion({
+              referencia: referenciaReembolso,
+              pasarela: pasarelaReembolso,
+              metodo: metodoReembolso,
+              transaccion_externa: transaccionReembolso
+            });
+          }
+        );
+      }
+    );
   });
 });
 
@@ -502,3 +580,4 @@ router.get('/:reserva_id', (req, res) => {
 });
 
 module.exports = router;
+

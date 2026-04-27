@@ -2,9 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Reseñar - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Reseñar - Tu Refugio</title>
   <link rel="stylesheet" href="calificar.css" />
+  <link rel="stylesheet" href="/global.css" />
+  <link rel="stylesheet" href="/css/chatbot-float.css" />
 </head>
 <body>
   <header>
@@ -57,7 +62,7 @@
         <label for="comentario">Comentario</label>
         <textarea id="comentario" rows="4" placeholder="Cuéntanos tu experiencia..." required></textarea>
 
-        <p id="estadoValidacion" style="margin-top:10px;"></p>
+        <p id="estadoValidacion" class="estado-card" aria-live="polite"></p>
 
         <button type="submit" id="btnEnviarResena" disabled>Enviar Reseña</button>
       </form>
@@ -70,5 +75,13 @@
     </section>
   </main>
   <script src="calificar.js"></script>
+  <script src="/js/chatbot-float.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

@@ -3,6 +3,8 @@
 // ======================================
 // Hacer la URL de API dinámicamente para funcionar en cualquier dispositivo
 const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
+const INTERVALO_REFRESCO_DETALLE_MS = 10000;
+let intervaloRefrescoDetalle = null;
 
 function normalizarRutaImagen(rutaOriginal) {
   const limpio = String(rutaOriginal || "")
@@ -34,6 +36,19 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("No se encontró el alojamiento");
     return;
   }
+
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-detalle-action]");
+    if (!trigger || trigger.disabled) return;
+
+    const action = trigger.dataset.detalleAction;
+    const habitacionId = Number(trigger.dataset.habitacionId || 0);
+    const lightboxUrl = decodeURIComponent(trigger.dataset.lightboxUrl || "");
+
+    if (action === "abrir-lightbox" && lightboxUrl) abrirLightbox(lightboxUrl);
+    if (action === "ir-reserva" && habitacionId > 0) irAReserva(habitacionId);
+    if (action === "reservar") reservar();
+  });
 
   cargarDetalleAlojamiento();
   cargarHabitaciones();
@@ -129,12 +144,12 @@ async function cargarHabitaciones() {
       const imagen = await obtenerImagenHabitacion(hab.id);
 
       div.innerHTML = `
-        <img src="${imagen}" onclick="abrirLightbox('${imagen}')">
+        <img src="${imagen}" data-detalle-action="abrir-lightbox" data-lightbox-url="${encodeURIComponent(imagen)}">
         <h4>${hab.nombre}</h4>
         <p>👥 ${hab.capacidad} personas</p>
         <p>💰 $${hab.precio}</p>
         <p id="servicios-${hab.id}">Cargando servicios...</p>
-        <button class="btn-reservar" onclick="irAReserva(${hab.id})">
+        <button type="button" class="btn-reservar" data-detalle-action="ir-reserva" data-habitacion-id="${hab.id}">
           Reservar
         </button>
       `;
@@ -256,6 +271,32 @@ function obtenerId() {
   return params.get("id");
 }
 
+async function alojamientoSigueDisponible(id) {
+  try {
+    const res = await fetch(`${API_URL}/alojamientos/${id}`, { cache: "no-store" });
+    return res.ok;
+  } catch (error) {
+    return true;
+  }
+}
+
+function iniciarRefrescoAutomaticoDetalle(id) {
+  if (intervaloRefrescoDetalle) {
+    clearInterval(intervaloRefrescoDetalle);
+  }
+
+  intervaloRefrescoDetalle = setInterval(async () => {
+    if (document.hidden) return;
+
+    const disponible = await alojamientoSigueDisponible(id);
+    if (!disponible) {
+      clearInterval(intervaloRefrescoDetalle);
+      alert("Este alojamiento ya no está disponible en este momento.");
+      window.location.href = "../explorar_alojamientos_fichas_detalle/explorar.html";
+    }
+  }, INTERVALO_REFRESCO_DETALLE_MS);
+}
+
 // ======================================
 // CARGAR DETALLES DEL ALOJAMIENTO
 // ======================================
@@ -270,6 +311,11 @@ async function cargarDetalles() {
   try {
     // 🔥 ALOJAMIENTO
     const res = await fetch(`${API_URL}/alojamientos/${id}`);
+    if (!res.ok) {
+      alert("Este alojamiento no está disponible o fue retirado.");
+      window.location.href = "../explorar_alojamientos_fichas_detalle/explorar.html";
+      return;
+    }
     const alojamiento = await res.json();
 
     // 🔥 IMÁGENES
@@ -280,6 +326,7 @@ async function cargarDetalles() {
 
     // 🔥 HABITACIONES
     cargarHabitaciones(id);
+    iniciarRefrescoAutomaticoDetalle(id);
 
   } catch (error) {
     console.error(error);
@@ -304,8 +351,8 @@ function mostrarAlojamiento(alojamiento, imagenes) {
   contenedor.innerHTML = `
     <div class="detalle-card">
 
-      <img src="${imagenPrincipal}" class="detalle-img"
-           onclick="abrirLightbox('${imagenPrincipal}')">
+       <img src="${imagenPrincipal}" class="detalle-img"
+         data-detalle-action="abrir-lightbox" data-lightbox-url="${encodeURIComponent(imagenPrincipal)}">
 
       <div class="detalle-info">
         <h2>${alojamiento.titulo}</h2>
@@ -315,7 +362,7 @@ function mostrarAlojamiento(alojamiento, imagenes) {
         <p>📞 +57 300 000 0000</p>
         <p>📧 contacto@turefugio.com</p>
 
-        <button onclick="reservar()">Reservar</button>
+        <button type="button" data-detalle-action="reservar">Reservar</button>
       </div>
 
     </div>
@@ -491,3 +538,9 @@ function reservar() {
 // INIT
 // ======================================
 document.addEventListener("DOMContentLoaded", cargarDetalles);
+
+window.addEventListener("beforeunload", () => {
+  if (intervaloRefrescoDetalle) {
+    clearInterval(intervaloRefrescoDetalle);
+  }
+});

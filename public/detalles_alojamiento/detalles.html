@@ -1,19 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalle Alojamiento - Tu Refugio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Detalle Alojamiento - Tu Refugio</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="detalles.css">
   <style>
     :root {
       --primary: #007b8a;
       --text: #2c3e50;
-      --white: #cfd8dc;
+      --white: #eef4f7;
       --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       --radius: 16px;
       --font: 'Montserrat', sans-serif;
+      --flt-gap: 12px;
+      --flt-top: 108px;
+      --flt-left-w: 340px;
+      --flt-right-w: 360px;
+      --flt-bottom-zone: 316px;
+      --flt-reserva-h: 292px;
+      --flt-servicios-h: 288px;
     }
 
     * {
@@ -25,11 +35,14 @@
     body {
       font-family: var(--font);
       color: var(--text);
-      background: var(--white);
+      background:
+        radial-gradient(900px 360px at -10% -12%, rgba(0, 155, 172, 0.08), transparent 60%),
+        radial-gradient(740px 320px at 110% 0%, rgba(0, 123, 138, 0.06), transparent 62%),
+        var(--white);
     }
 
     .header {
-      background: var(--primary);
+      background: linear-gradient(135deg, #009bac 0%, #007b8a 52%, #00606e 100%);
       box-shadow: var(--shadow);
       position: sticky;
       top: 0;
@@ -38,6 +51,7 @@
       align-items: center;
       justify-content: center;
       height: 90px;
+      backdrop-filter: saturate(130%) blur(8px);
     }
 
     .header-left {
@@ -62,23 +76,29 @@
       max-width: 980px;
       margin: 30px auto;
       padding: 20px;
+      position: relative;
     }
 
     .card {
-      background: white;
+      background: rgba(255, 255, 255, 0.96);
       padding: 20px;
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      box-shadow: 0 20px 46px rgba(15, 30, 45, 0.12);
+      border: 1px solid rgba(0, 123, 138, 0.14);
       text-align: center;
     }
 
     .btn-volver {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: static;
       margin-bottom: 16px;
       padding: 8px 14px;
       border-radius: 10px;
       border: 1px solid rgba(0, 123, 138, 0.35);
       text-decoration: none;
+      background: rgba(255, 255, 255, 0.95);
       color: #007b8a;
       font-weight: 600;
       transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -88,6 +108,36 @@
       background-color: rgba(0, 123, 138, 0.12);
       box-shadow: 0 2px 8px rgba(0, 123, 138, 0.2);
       transform: translateY(-1px);
+    }
+
+    .detalle-layout {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel-lateral-izquierdo {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+      position: sticky;
+      top: 98px;
+      align-self: start;
+      max-height: none;
+      overflow: visible;
+      padding-right: 4px;
+    }
+
+    .panel-lateral-izquierdo .btn-volver {
+      width: 100%;
+      margin-bottom: 0;
+    }
+
+    .contenido-principal-derecha {
+      min-width: 0;
     }
 
     .link-como-llegar,
@@ -131,14 +181,22 @@
 
     #galeria {
       margin-top: 16px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 4px 2px 8px;
+      scrollbar-width: thin;
     }
 
     #galeria img,
     #habitaciones .hab-imagenes img {
       width: 120px;
       height: 120px;
+      flex: 0 0 auto;
       object-fit: cover;
-      margin: 5px;
+      margin: 0;
       border-radius: 10px;
       border: 2px solid transparent;
       cursor: pointer;
@@ -159,12 +217,45 @@
     }
 
     .filtros-container {
-      margin-top: 18px;
+      margin-top: 0;
       padding: 14px;
       border-radius: 12px;
       background: #f6fafb;
       border: 1px solid #e3eef1;
       text-align: left;
+    }
+
+    .filtros-container.filtros-flotante {
+      position: static;
+      margin-top: 18px;
+      padding: 14px;
+      background: #f6fafb;
+      border: 1px solid #e3eef1;
+      box-shadow: none;
+      backdrop-filter: none;
+      overflow: visible;
+    }
+
+    .filtros-container.filtros-flotante .filtros-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .filtros-container.filtros-flotante .filtro-item label {
+      font-size: 13px;
+    }
+
+    .filtros-container.filtros-flotante .filtro-item input {
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .filtros-container.filtros-flotante .btn-filtrar,
+    .filtros-container.filtros-flotante .btn-limpiar {
+      margin-top: 12px;
+      margin-right: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
     }
 
     .filtros-grid {
@@ -192,6 +283,8 @@
     .btn-filtrar,
     .btn-limpiar,
     .btn {
+      position: relative;
+      overflow: hidden;
       margin-top: 12px;
       margin-right: 8px;
       padding: 10px 16px;
@@ -200,6 +293,23 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
+    }
+
+    .btn-filtrar::before,
+    .btn-limpiar::before,
+    .btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.34) 50%, transparent 80%);
+      transform: translateX(-130%);
+      transition: transform 0.55s ease;
+    }
+
+    .btn-filtrar:hover::before,
+    .btn-limpiar:hover::before,
+    .btn:hover::before {
+      transform: translateX(130%);
     }
 
     .bloque-politicas-reserva {
@@ -272,6 +382,78 @@
       margin-bottom: 6px;
     }
 
+    .card-hab.reservada {
+      border-color: #f44336;
+      background: #fff4f4;
+      box-shadow: 0 8px 18px rgba(244, 67, 54, 0.14);
+    }
+
+    .card-hab.mantenimiento {
+      border-color: #ffb300;
+      background: #fffaf0;
+      box-shadow: 0 8px 18px rgba(255, 179, 0, 0.14);
+    }
+
+    .card-hab.limpieza {
+      border-color: #1e88e5;
+      background: #eef6ff;
+      box-shadow: 0 8px 18px rgba(30, 136, 229, 0.18);
+    }
+
+    .estado-hab {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+
+    .estado-hab.estado-ocupada {
+      background: #fee2e2;
+      color: #b71c1c;
+      border: 1px solid #ef9a9a;
+    }
+
+    .estado-hab.estado-mantenimiento {
+      background: #fff3cd;
+      color: #9a4f00;
+      border: 1px solid #ffd77a;
+    }
+
+    .estado-hab.estado-disponible {
+      background: #e7f6ec;
+      color: #1b7d3c;
+      border: 1px solid #b7e1c5;
+    }
+
+    .estado-hab.estado-limpieza {
+      background: #e3f2fd;
+      color: #0d47a1;
+      border: 1px solid #90caf9;
+    }
+
+    .estado-detalle {
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .estado-detalle.ocupada {
+      color: #b71c1c;
+    }
+
+    .estado-detalle.mantenimiento {
+      color: #9a4f00;
+    }
+
+    .estado-detalle.limpieza {
+      color: #0d47a1;
+    }
+
     .card-hab p {
       margin: 4px 0;
       font-size: 14px;
@@ -285,12 +467,49 @@
     }
 
     .panel-servicios {
-      margin-top: 24px;
+      margin-top: 0;
       padding: 16px;
       border-radius: 12px;
       border: 1px solid #e4ecef;
       background: #f8fbfc;
       text-align: left;
+    }
+
+    .panel-servicios.panel-servicios-flotante {
+      position: static;
+      width: 100%;
+      height: auto;
+      margin-top: 24px;
+      padding: 16px;
+      z-index: auto;
+      background: #f8fbfc;
+      border: 1px solid #e4ecef;
+      box-shadow: none;
+      backdrop-filter: none;
+      display: block;
+    }
+
+    .panel-servicios.panel-servicios-flotante h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .panel-servicios.panel-servicios-flotante .servicios-filtros {
+      margin-bottom: 14px;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .panel-servicios.panel-servicios-flotante .servicios-grid {
+      overflow: visible;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      padding-right: 0;
+    }
+
+    .panel-servicios.panel-servicios-flotante .servicio-card {
+      margin-bottom: 8px;
     }
 
     .panel-servicios h3 {
@@ -386,6 +605,53 @@
       font-size: 14px;
     }
 
+    .panel-reserva-fija {
+      position: static;
+      width: 100%;
+      min-height: 0;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid #cfe7eb;
+      border-radius: 14px;
+      box-shadow: 0 10px 26px rgba(10, 49, 58, 0.14);
+      backdrop-filter: none;
+      z-index: auto;
+      padding: 12px;
+      text-align: left;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 0;
+    }
+
+    .panel-reserva-fija .resumen-reserva {
+      margin-top: 0;
+      margin-bottom: 0;
+      max-height: none;
+      overflow: visible;
+    }
+
+    .panel-reserva-fija .btn {
+      width: 100%;
+      margin-top: 10px;
+      margin-right: 0;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 10px;
+    }
+
+    .panel-reserva-fija .bloque-politicas-reserva {
+      margin-top: 10px;
+      margin-bottom: 0;
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .panel-reserva-fija .check-politicas-label {
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     .btn-seleccionar-habitacion {
       margin-top: 10px;
       padding: 8px 12px;
@@ -401,6 +667,109 @@
       background: #0099ab;
       transform: translateY(-1px);
       box-shadow: 0 8px 18px rgba(0, 123, 138, 0.22);
+    }
+
+    .btn-seleccionar-habitacion:disabled {
+      background: #b0bec5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .alerta-disponibilidad-wrap {
+      margin-top: 10px;
+      border: 1px dashed #c9d9f1;
+      border-radius: 10px;
+      background: #f7fbff;
+      padding: 10px;
+    }
+
+    .btn-alerta-disponibilidad {
+      width: 100%;
+      border: 1px solid #1f4f8f;
+      background: #ffffff;
+      color: #1f4f8f;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-alerta-disponibilidad:hover {
+      background: #e9f2ff;
+      border-color: #0f3a72;
+      color: #0f3a72;
+    }
+
+    .alerta-disponibilidad-menu {
+      margin-top: 10px;
+      display: none;
+      gap: 8px;
+      flex-direction: column;
+    }
+
+    .alerta-disponibilidad-menu.visible {
+      display: flex;
+    }
+
+    .alerta-disponibilidad-menu label {
+      font-size: 0.82rem;
+      color: #3e4d61;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .alerta-disponibilidad-menu select,
+    .alerta-disponibilidad-menu input {
+      width: 100%;
+      border: 1px solid #c6d4ea;
+      border-radius: 7px;
+      padding: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+    }
+
+    .btn-confirmar-alerta {
+      border: 1px solid #1e88e5;
+      background: #1e88e5;
+      color: #fff;
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-confirmar-alerta:hover {
+      background: #0f6fc5;
+      border-color: #0f6fc5;
+    }
+
+    .alerta-disponibilidad-feedback {
+      display: none;
+      margin-top: 8px;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+      line-height: 1.4;
+      font-weight: 600;
+    }
+
+    .alerta-disponibilidad-feedback.visible {
+      display: block;
+    }
+
+    .alerta-disponibilidad-feedback.ok {
+      background: #e8f6ee;
+      border: 1px solid #9fd3b0;
+      color: #1f6b3b;
+    }
+
+    .alerta-disponibilidad-feedback.error {
+      background: #fff0f0;
+      border: 1px solid #efb2b2;
+      color: #b33939;
     }
 
     .lightbox {
@@ -420,7 +789,72 @@
       max-width: 80%;
       border-radius: 10px;
     }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 16px auto;
+        padding: 12px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .detalle-layout {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .panel-lateral-izquierdo {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      .btn-volver {
+        width: 100%;
+      }
+
+      .panel-reserva-fija {
+        position: static;
+        width: 100%;
+        min-height: 0;
+        padding: 10px;
+        box-shadow: 0 8px 20px rgba(10, 49, 58, 0.16);
+      }
+
+      .panel-reserva-fija .resumen-reserva {
+        max-height: none;
+      }
+
+      .filtros-container.filtros-flotante {
+        position: static;
+        width: 100%;
+        max-height: none;
+      }
+
+      .filtros-container.filtros-flotante .filtros-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-servicios.panel-servicios-flotante {
+        position: static;
+        width: 100%;
+        height: auto;
+      }
+
+      .panel-servicios.panel-servicios-flotante .servicios-filtros {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-servicios.panel-servicios-flotante .servicios-grid {
+        max-height: none;
+      }
+    }
   </style>
+  <link rel="stylesheet" href="/global.css" />
+  <link rel="stylesheet" href="/css/chatbot-float.css" />
 </head>
 <body>
   <header class="header">
@@ -434,8 +868,6 @@
 
   <div class="container">
     <div class="card">
-      <a href="/explorar_alojamientos_fichas_detalle/explorar.html" class="btn-volver">← Volver a explorar</a>
-
       <h2 id="titulo">Cargando...</h2>
       <p id="ubicacion"></p>
       <p id="contacto"></p>
@@ -444,53 +876,63 @@
 
       <iframe id="mapa" width="100%" height="250"></iframe>
 
-      <div class="filtros-container">
-        <h3>🔍 Filtrar Habitaciones</h3>
-        <div class="filtros-grid">
-          <div class="filtro-item">
-            <label for="filtro-capacidad">👥 Capacidad (personas):</label>
-            <input type="number" id="filtro-capacidad" placeholder="Min. personas" min="1">
-          </div>
-          <div class="filtro-item">
-            <label for="filtro-precio-min">💰 Precio mínimo:</label>
-            <input type="number" id="filtro-precio-min" placeholder="Desde $" min="0">
-          </div>
-          <div class="filtro-item">
-            <label for="filtro-precio-max">💰 Precio máximo:</label>
-            <input type="number" id="filtro-precio-max" placeholder="Hasta $" min="0">
-          </div>
-          <div class="filtro-item">
-            <label for="filtro-servicios">🛎️ Servicios:</label>
-            <input type="text" id="filtro-servicios" placeholder="Ej: wifi, tv">
-          </div>
-        </div>
-        <button id="btnFiltrar" class="btn-filtrar">🔎 Filtrar</button>
-        <button id="btnLimpiar" class="btn-limpiar">🔄 Limpiar</button>
-      </div>
+      <div class="detalle-layout">
+        <aside class="panel-lateral-izquierdo" aria-label="Panel lateral de controles y reserva">
+          <a href="/explorar_alojamientos_fichas_detalle/explorar.html" class="btn-volver">← Volver a explorar</a>
 
-      <div id="habitaciones" class="grid-habitaciones"></div>
+          <div class="filtros-container filtros-flotante">
+            <h3>🔍 Filtrar Habitaciones</h3>
+            <div class="filtros-grid">
+              <div class="filtro-item">
+                <label for="filtro-capacidad">👥 Capacidad (personas):</label>
+                <input type="number" id="filtro-capacidad" placeholder="Min. personas" min="1">
+              </div>
+              <div class="filtro-item">
+                <label for="filtro-precio-min">💰 Precio mínimo:</label>
+                <input type="number" id="filtro-precio-min" placeholder="Desde $" min="0">
+              </div>
+              <div class="filtro-item">
+                <label for="filtro-precio-max">💰 Precio máximo:</label>
+                <input type="number" id="filtro-precio-max" placeholder="Hasta $" min="0">
+              </div>
+              <div class="filtro-item">
+                <label for="filtro-servicios">🛎️ Servicios:</label>
+                <input type="text" id="filtro-servicios" placeholder="Ej: wifi, tv">
+              </div>
+            </div>
+            <button id="btnFiltrar" class="btn-filtrar">🔎 Filtrar</button>
+            <button id="btnLimpiar" class="btn-limpiar">🔄 Limpiar</button>
+          </div>
 
-      <div class="panel-servicios">
-        <h3>🧩 Servicios disponibles bajo solicitud</h3>
-        <div class="servicios-filtros">
-          <input id="filtro-servicio-texto" type="text" placeholder="Buscar por nombre o palabra clave">
-          <select id="filtro-servicio-categoria">
-            <option value="">Todas las categorías</option>
-          </select>
-          <input id="filtro-servicio-valor-min" type="number" min="0" placeholder="Valor mínimo">
-          <input id="filtro-servicio-valor-max" type="number" min="0" placeholder="Valor máximo">
-        </div>
-        <div id="listaServiciosAlojamiento" class="servicios-grid"></div>
-      </div>
+          <div class="panel-servicios panel-servicios-flotante">
+            <h3>🧩 Servicios disponibles bajo solicitud</h3>
+            <div class="servicios-filtros">
+              <input id="filtro-servicio-texto" type="text" placeholder="Buscar por nombre o palabra clave">
+              <select id="filtro-servicio-categoria">
+                <option value="">Todas las categorías</option>
+              </select>
+              <input id="filtro-servicio-valor-min" type="number" min="0" placeholder="Valor mínimo">
+              <input id="filtro-servicio-valor-max" type="number" min="0" placeholder="Valor máximo">
+            </div>
+            <div id="listaServiciosAlojamiento" class="servicios-grid"></div>
+          </div>
 
-      <div id="resumenReserva" class="resumen-reserva"></div>
+          <div class="panel-reserva-fija" aria-label="Panel rapido para completar reserva">
+            <div id="resumenReserva" class="resumen-reserva"></div>
 
-      <button class="btn" onclick="irReserva()">Reservar</button>
-      <div class="bloque-politicas-reserva">
-        <label for="aceptaPoliticasReserva" class="check-politicas-label">
-          <input type="checkbox" id="aceptaPoliticasReserva">
-          He leido y acepto las politicas de reserva y cancelacion.
-        </label>
+            <button id="btnIrReserva" class="btn" type="button">Reservar</button>
+            <div class="bloque-politicas-reserva">
+              <label for="aceptaPoliticasReserva" class="check-politicas-label">
+                <input type="checkbox" id="aceptaPoliticasReserva">
+                He leido y acepto las politicas de reserva y cancelacion.
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <section class="contenido-principal-derecha">
+          <div id="habitaciones" class="grid-habitaciones"></div>
+        </section>
       </div>
     </div>
   </div>
@@ -505,6 +947,111 @@
     let alojamientoActual = null;
     let habitacionSeleccionada = null;
     let serviciosSeleccionados = [];
+    let timerActualizacionDetalle = null;
+    let proximaActualizacionDetalleAt = null;
+    let streamHabitaciones = null;
+    let timerRefrescoSseHabitaciones = null;
+
+    function parsearFechaSistema(fechaTexto) {
+      if (!fechaTexto) return null;
+      const texto = String(fechaTexto).trim();
+      const normalizada = /^\d{4}-\d{2}-\d{2}$/.test(texto)
+        ? `${texto}T12:00:00`
+        : texto.replace(' ', 'T');
+      const fecha = new Date(normalizada);
+      return Number.isNaN(fecha.getTime()) ? null : fecha;
+    }
+
+    function programarActualizacionDetallePuntual() {
+      if (timerActualizacionDetalle) {
+        clearTimeout(timerActualizacionDetalle);
+        timerActualizacionDetalle = null;
+      }
+
+      proximaActualizacionDetalleAt = null;
+      const ahora = Date.now();
+      let msMin = null;
+
+      habitacionesGlobal.forEach((h) => {
+        const estado = String(h?.estado || '').toLowerCase();
+        const candidata =
+          estado === 'ocupada'
+            ? (h?.ocupada_hasta || h?.proxima_disponibilidad)
+            : (estado === 'mantenimiento'
+              ? (h?.mantenimiento_hasta || h?.proxima_disponibilidad)
+              : (estado === 'limpieza'
+                ? (h?.limpieza_hasta || h?.proxima_disponibilidad)
+                : null));
+
+        const fecha = parsearFechaSistema(candidata);
+        if (!fecha) return;
+
+        const delta = fecha.getTime() - ahora;
+        if (delta <= 0) {
+          msMin = 0;
+          return;
+        }
+        if (msMin === null || delta < msMin) msMin = delta;
+      });
+
+      if (msMin === null) return;
+
+      const espera = Math.max(1000, msMin + 1200);
+      proximaActualizacionDetalleAt = ahora + espera;
+      timerActualizacionDetalle = setTimeout(async () => {
+        if (document.hidden) return;
+        try {
+          await cargarHabitaciones();
+        } catch (error) {
+          console.error("Error en actualización puntual de detalle:", error);
+        }
+      }, espera);
+    }
+
+    function hayFiltrosHabitacionesActivos() {
+      const capacidad = String(document.getElementById("filtro-capacidad")?.value || "").trim();
+      const precioMin = String(document.getElementById("filtro-precio-min")?.value || "").trim();
+      const precioMax = String(document.getElementById("filtro-precio-max")?.value || "").trim();
+      const servicios = String(document.getElementById("filtro-servicios")?.value || "").trim();
+      return Boolean(capacidad || precioMin || precioMax || servicios);
+    }
+
+    async function refrescarHabitacionesPorEvento() {
+      await cargarHabitaciones();
+      if (hayFiltrosHabitacionesActivos()) {
+        await aplicarFiltrosDetail();
+      }
+    }
+
+    function conectarStreamHabitaciones() {
+      if (typeof EventSource === "undefined") return;
+      if (!id) return;
+
+      if (streamHabitaciones) {
+        streamHabitaciones.close();
+        streamHabitaciones = null;
+      }
+
+      const streamUrl = `${API_URL}/habitaciones/stream/alojamiento/${id}`;
+      streamHabitaciones = new EventSource(streamUrl);
+
+      streamHabitaciones.addEventListener("habitaciones_actualizadas", () => {
+        if (timerRefrescoSseHabitaciones) {
+          clearTimeout(timerRefrescoSseHabitaciones);
+        }
+
+        timerRefrescoSseHabitaciones = setTimeout(() => {
+          refrescarHabitacionesPorEvento().catch((error) => {
+            console.error("Error refrescando habitaciones por SSE:", error);
+          });
+          timerRefrescoSseHabitaciones = null;
+        }, 180);
+      });
+
+      streamHabitaciones.onerror = () => {
+        // EventSource reintenta automáticamente; mantenemos silencioso.
+      };
+    }
 
     const CATEGORIAS_SERVICIOS = [
       { nombre: "Conectividad y Tecnologia", keywords: ["wifi", "tv", "smart", "netflix", "streaming", "escritorio", "usb", "aire acondicionado", "calefaccion", "alexa", "google home", "cable"] },
@@ -677,11 +1224,127 @@
       const habs = await res.json();
       habitacionesGlobal = Array.isArray(habs) ? habs : [];
       await renderHabitaciones(habitacionesGlobal);
+      programarActualizacionDetallePuntual();
+    }
+
+    function formatearFechaDisponibilidad(fechaTexto, incluirHora = false) {
+      if (!fechaTexto) return "Por definir";
+      const texto = String(fechaTexto).trim();
+      const normalizada = /^\d{4}-\d{2}-\d{2}$/.test(texto)
+        ? `${texto}T12:00:00`
+        : texto.replace(' ', 'T');
+      const fecha = new Date(normalizada);
+      if (Number.isNaN(fecha.getTime())) return String(fechaTexto);
+      const opciones = {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      };
+      if (incluirHora) {
+        opciones.hour = "2-digit";
+        opciones.minute = "2-digit";
+      }
+      return fecha.toLocaleString("es-CO", opciones);
+    }
+
+    function obtenerPlaceholderCanal(canal) {
+      return 'ejemplo@correo.com';
+    }
+
+    function toggleChecklistNotificacionHabitacion(idHabitacion) {
+      const menu = document.getElementById(`menu-alerta-hab-${idHabitacion}`);
+      if (!menu) return;
+      menu.classList.toggle('visible');
+    }
+
+    function onCambioCanalNotificacionHabitacion(idHabitacion) {
+      const canal = document.getElementById(`canal-alerta-hab-${idHabitacion}`);
+      const destino = document.getElementById(`destino-alerta-hab-${idHabitacion}`);
+      if (!canal || !destino) return;
+      destino.placeholder = obtenerPlaceholderCanal(canal.value);
+      destino.value = '';
+    }
+
+    function mostrarFeedbackAlertaDisponibilidad(idHabitacion, mensaje, tipo = 'ok') {
+      const feedback = document.getElementById(`feedback-alerta-hab-${idHabitacion}`);
+      if (!feedback) return;
+      feedback.className = `alerta-disponibilidad-feedback visible ${tipo === 'error' ? 'error' : 'ok'}`;
+      feedback.textContent = mensaje;
+    }
+
+    async function registrarAlertaDisponibilidadHabitacion(idHabitacion, nombreHabitacion) {
+      const canalEl = document.getElementById(`canal-alerta-hab-${idHabitacion}`);
+      const destinoEl = document.getElementById(`destino-alerta-hab-${idHabitacion}`);
+      if (!canalEl || !destinoEl) return;
+
+      const canal = String(canalEl.value || '').trim().toLowerCase();
+      const destinatario = String(destinoEl.value || '').trim();
+
+      if (canal !== 'email') {
+        mostrarFeedbackAlertaDisponibilidad(idHabitacion, 'Selecciona un canal válido de notificación.', 'error');
+        return;
+      }
+
+      if (!destinatario) {
+        mostrarFeedbackAlertaDisponibilidad(idHabitacion, 'Debes indicar el medio de contacto para la notificación.', 'error');
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/habitaciones/${idHabitacion}/alerta-disponibilidad`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ canal, destinatario })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        mostrarFeedbackAlertaDisponibilidad(idHabitacion, data.error || 'No se pudo registrar la alerta de disponibilidad.', 'error');
+        return;
+      }
+
+      mostrarFeedbackAlertaDisponibilidad(idHabitacion, `Te notificaremos por correo electrónico cuando ${nombreHabitacion} esté disponible.`, 'ok');
+      const menu = document.getElementById(`menu-alerta-hab-${idHabitacion}`);
+      if (menu) menu.classList.remove('visible');
+    }
+
+    function construirDetalleEstadoHabitacion(h) {
+      const estado = String(h.estado || "disponible").toLowerCase();
+      const proxima = formatearFechaDisponibilidad(h.proxima_disponibilidad);
+
+      if (estado === "ocupada") {
+        return `🔒 Habitación reservada. Próxima disponibilidad: <strong>${proxima}</strong>.`;
+      }
+
+      if (estado === "mantenimiento") {
+        const proximaMantenimiento = formatearFechaDisponibilidad(h.proxima_disponibilidad || h.mantenimiento_hasta, false);
+        const estimado = Number(h.mantenimiento_estimado_horas || 0);
+        const textoEstimado = estimado > 0
+          ? ` Tiempo estimado de liberación: ${estimado.toFixed(1)} hora(s).`
+          : "";
+        return `🛠 Habitación en mantenimiento. Próxima disponibilidad: <strong>${proximaMantenimiento}</strong>.${textoEstimado}`;
+      }
+
+      if (estado === "limpieza") {
+        return `🧹 Habitación en limpieza . Próxima disponibilidad: <strong>${proxima}</strong>.`;
+      }
+
+      return "✅ Habitación disponible para reservar.";
     }
 
     async function renderHabitaciones(habs) {
       const cont = document.getElementById("habitaciones");
       cont.innerHTML = "";
+
+      if (habitacionSeleccionada) {
+        const vigente = habitacionesGlobal.find((item) => Number(item.id) === Number(habitacionSeleccionada.id));
+        const estadoVigente = String(vigente?.estado || "disponible").toLowerCase();
+        if (vigente && (estadoVigente === "ocupada" || estadoVigente === "mantenimiento")) {
+          habitacionSeleccionada = null;
+          actualizarResumenReserva();
+        }
+      }
 
       for (const h of habs) {
         const serviciosHab = await obtenerServiciosHabitacion(h.id);
@@ -689,17 +1352,51 @@
           ? serviciosHab.map((s) => s.nombre).join(", ")
           : "Sin servicios asignados";
 
+        const estado = String(h.estado || "disponible").toLowerCase();
+        const bloqueada = estado === "ocupada" || estado === "mantenimiento";
+        const bloqueadaFinal = bloqueada || estado === "limpieza";
+        const claseEstado = estado === "ocupada"
+          ? "estado-ocupada"
+          : (estado === "mantenimiento"
+            ? "estado-mantenimiento"
+            : (estado === "limpieza" ? "estado-limpieza" : "estado-disponible"));
+        const claseCardBloqueo = estado === "ocupada"
+          ? " reservada"
+          : (estado === "mantenimiento" ? " mantenimiento" : (estado === "limpieza" ? " limpieza" : ""));
+        const detalleEstado = construirDetalleEstadoHabitacion(h);
+        const nombreSeguro = String(h.nombre || '').replace(/'/g, "\\'");
+        const nombreData = encodeURIComponent(String(h.nombre || ''));
+        const checklistNotificacion = bloqueadaFinal
+          ? `
+            <div class="alerta-disponibilidad-wrap">
+              <button class="btn-alerta-disponibilidad" type="button" data-toggle-alerta-hab-id="${h.id}">☑️ ¿Deseas ser notificado cuando esta habitación esté disponible?</button>
+              <div id="menu-alerta-hab-${h.id}" class="alerta-disponibilidad-menu">
+                <label for="canal-alerta-hab-${h.id}">Medio de notificación</label>
+                <select id="canal-alerta-hab-${h.id}" class="js-canal-alerta-hab" data-alerta-hab-id="${h.id}">
+                  <option value="email">Correo electrónico</option>
+                </select>
+                <label for="destino-alerta-hab-${h.id}">Destino</label>
+                <input id="destino-alerta-hab-${h.id}" type="text" placeholder="ejemplo@correo.com" />
+                <button class="btn-confirmar-alerta" type="button" data-registrar-alerta-hab-id="${h.id}" data-registrar-alerta-hab-nombre="${nombreData}">Guardar notificación</button>
+                <div id="feedback-alerta-hab-${h.id}" class="alerta-disponibilidad-feedback"></div>
+              </div>
+            </div>`
+          : '';
+
         const div = document.createElement("div");
-        div.className = `card-hab${habitacionSeleccionada && habitacionSeleccionada.id === h.id ? " seleccionada" : ""}`;
+        div.className = `card-hab${claseCardBloqueo}${habitacionSeleccionada && habitacionSeleccionada.id === h.id ? " seleccionada" : ""}`;
         div.innerHTML = `
           <h4>${h.nombre}</h4>
+          <span class="estado-hab ${claseEstado}">${estado}</span>
           <p>👥 Capacidad: ${h.capacidad} personas</p>
           <p>💰 Valor por noche: $${Number(h.precio || 0).toLocaleString("es-CO")}</p>
           <p>🛎️ Servicios: ${nombresServicios}</p>
+          <p class="estado-detalle ${estado === 'ocupada' ? 'ocupada' : (estado === 'mantenimiento' ? 'mantenimiento' : (estado === 'limpieza' ? 'limpieza' : ''))}">${detalleEstado}</p>
           <div id="hab-${h.id}" class="hab-imagenes"></div>
-          <button class="btn-seleccionar-habitacion" onclick="seleccionarHabitacion(${h.id}, '${String(h.nombre || '').replace(/'/g, "\\'")}', ${Number(h.precio || 0)}, ${Number(h.capacidad || 0)})">
-            ${habitacionSeleccionada && habitacionSeleccionada.id === h.id ? "✅ Habitación seleccionada" : "Seleccionar habitación"}
+          <button class="btn-seleccionar-habitacion" type="button" ${bloqueadaFinal ? 'disabled' : ''} data-seleccionar-habitacion-id="${h.id}" data-seleccionar-habitacion-nombre="${nombreData}" data-seleccionar-habitacion-precio="${Number(h.precio || 0)}" data-seleccionar-habitacion-capacidad="${Number(h.capacidad || 0)}">
+            ${bloqueadaFinal ? "No disponible en este momento" : (habitacionSeleccionada && habitacionSeleccionada.id === h.id ? "✅ Habitación seleccionada" : "Seleccionar habitación")}
           </button>
+          ${checklistNotificacion}
         `;
 
         cont.appendChild(div);
@@ -763,6 +1460,14 @@
     }
 
     function seleccionarHabitacion(idHabitacion, nombreHabitacion, precioHabitacion, capacidadHabitacion) {
+      const habitacionActual = habitacionesGlobal.find((h) => Number(h.id) === Number(idHabitacion));
+      const estado = String(habitacionActual?.estado || 'disponible').toLowerCase();
+      if (estado === 'ocupada' || estado === 'mantenimiento' || estado === 'limpieza') {
+        const disponibilidad = formatearFechaDisponibilidad(habitacionActual?.proxima_disponibilidad);
+        alert(`⚠️ Esta habitación no se puede reservar por ahora. Estado: ${estado}. Próxima disponibilidad: ${disponibilidad}.`);
+        return;
+      }
+
       habitacionSeleccionada = {
         id: idHabitacion,
         nombre: nombreHabitacion,
@@ -856,7 +1561,7 @@
           return `
             <div class="servicio-opcion">
               <label>
-                <input type="checkbox" data-servicio-id="${s.id}" ${checked} onchange="toggleServicioAdicional(${s.id})">
+                <input type="checkbox" class="js-servicio-adicional-checkbox" data-servicio-id="${s.id}" ${checked}>
                 <span>${s.nombre}</span>
               </label>
               <strong>$${Number(valor).toLocaleString("es-CO")}</strong>
@@ -992,8 +1697,90 @@
     document.addEventListener("DOMContentLoaded", async () => {
       inicializarFiltrosHabitaciones();
       inicializarFiltrosServicios();
+
+      const btnIrReserva = document.getElementById("btnIrReserva");
+      if (btnIrReserva) {
+        btnIrReserva.addEventListener("click", irReserva);
+      }
+
+      document.addEventListener("click", (e) => {
+        const btnToggleAlerta = e.target.closest("[data-toggle-alerta-hab-id]");
+        if (btnToggleAlerta) {
+          const habitacionId = Number(btnToggleAlerta.dataset.toggleAlertaHabId);
+          if (Number.isFinite(habitacionId)) {
+            toggleChecklistNotificacionHabitacion(habitacionId);
+          }
+          return;
+        }
+
+        const btnRegistrarAlerta = e.target.closest("[data-registrar-alerta-hab-id]");
+        if (btnRegistrarAlerta) {
+          const habitacionId = Number(btnRegistrarAlerta.dataset.registrarAlertaHabId);
+          const nombreHabitacion = decodeURIComponent(btnRegistrarAlerta.dataset.registrarAlertaHabNombre || "");
+          if (Number.isFinite(habitacionId)) {
+            registrarAlertaDisponibilidadHabitacion(habitacionId, nombreHabitacion);
+          }
+          return;
+        }
+
+        const btnSeleccionar = e.target.closest("[data-seleccionar-habitacion-id]");
+        if (btnSeleccionar && !btnSeleccionar.disabled) {
+          const idHabitacion = Number(btnSeleccionar.dataset.seleccionarHabitacionId);
+          const nombreHabitacion = decodeURIComponent(btnSeleccionar.dataset.seleccionarHabitacionNombre || "");
+          const precioHabitacion = Number(btnSeleccionar.dataset.seleccionarHabitacionPrecio || 0);
+          const capacidadHabitacion = Number(btnSeleccionar.dataset.seleccionarHabitacionCapacidad || 0);
+          if (Number.isFinite(idHabitacion)) {
+            seleccionarHabitacion(idHabitacion, nombreHabitacion, precioHabitacion, capacidadHabitacion);
+          }
+        }
+      });
+
+      document.addEventListener("change", (e) => {
+        const selectCanal = e.target.closest(".js-canal-alerta-hab");
+        if (selectCanal) {
+          const habitacionId = Number(selectCanal.dataset.alertaHabId);
+          if (Number.isFinite(habitacionId)) {
+            onCambioCanalNotificacionHabitacion(habitacionId);
+          }
+          return;
+        }
+
+        const checkboxServicio = e.target.closest(".js-servicio-adicional-checkbox");
+        if (checkboxServicio) {
+          const idServicio = Number(checkboxServicio.dataset.servicioId);
+          if (Number.isFinite(idServicio)) {
+            toggleServicioAdicional(idServicio);
+          }
+        }
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden || !proximaActualizacionDetalleAt) return;
+        if (Date.now() < proximaActualizacionDetalleAt) return;
+        cargarHabitaciones().catch((error) => console.error("Error actualizando detalle al volver a la pestaña:", error));
+      });
       await cargarDetalle();
+      conectarStreamHabitaciones();
+
+      window.addEventListener("beforeunload", () => {
+        if (streamHabitaciones) {
+          streamHabitaciones.close();
+          streamHabitaciones = null;
+        }
+        if (timerRefrescoSseHabitaciones) {
+          clearTimeout(timerRefrescoSseHabitaciones);
+          timerRefrescoSseHabitaciones = null;
+        }
+      });
     });
   </script>
+  <script src="/js/chatbot-float.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

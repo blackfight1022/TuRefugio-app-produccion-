@@ -38,9 +38,22 @@ db.serialize(() => {
     estado_cuenta TEXT DEFAULT 'activo',
     suspension_hasta DATETIME,
     suspension_motivo TEXT,
+    es_superadmin INTEGER DEFAULT 0,
     rol_id INTEGER NOT NULL,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (rol_id) REFERENCES roles(id)
+  )`);
+
+  // ASIGNACIÓN DE ADMINISTRADOR POR ANFITRIÓN
+  db.run(`CREATE TABLE IF NOT EXISTS admin_anfitriones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_id INTEGER NOT NULL,
+    anfitrion_id INTEGER NOT NULL UNIQUE,
+    asignado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    asignado_por INTEGER,
+    FOREIGN KEY (admin_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (anfitrion_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (asignado_por) REFERENCES usuarios(id) ON DELETE SET NULL
   )`);
 
   // ALOJAMIENTOS
@@ -112,6 +125,34 @@ db.serialize(() => {
     if (!columnNames.includes('suspension_motivo')) {
       db.run(`ALTER TABLE usuarios ADD COLUMN suspension_motivo TEXT`);
     }
+
+    const marcarSuperadminInicial = () => {
+      // Semilla inicial: el primer admin queda como superadmin para gestión de reasignaciones.
+      db.run(`
+        UPDATE usuarios
+        SET es_superadmin = 1
+        WHERE id IN (
+          SELECT u.id
+          FROM usuarios u
+          JOIN roles r ON r.id = u.rol_id
+          WHERE r.nombre = 'admin'
+          ORDER BY u.id ASC
+          LIMIT 1
+        )
+      `);
+    };
+
+    if (!columnNames.includes('es_superadmin')) {
+      db.run(`ALTER TABLE usuarios ADD COLUMN es_superadmin INTEGER DEFAULT 0`, (alterErr) => {
+        if (alterErr) {
+          console.error('Error adding es_superadmin column:', alterErr);
+          return;
+        }
+        marcarSuperadminInicial();
+      });
+    } else {
+      marcarSuperadminInicial();
+    }
   });
 
   db.all(`PRAGMA table_info(alojamientos)`, [], function(err, rows) {
@@ -142,6 +183,10 @@ db.serialize(() => {
     capacidad INTEGER NOT NULL,
     precio REAL NOT NULL,
     estado_manual TEXT DEFAULT 'disponible',
+    mantenimiento_hasta TEXT,
+    mantenimiento_estimado_horas REAL,
+    limpieza_hasta TEXT,
+    limpieza_referencia_checkout TEXT,
     id_alojamiento INTEGER NOT NULL,
     FOREIGN KEY (id_alojamiento) REFERENCES alojamientos(id) ON DELETE CASCADE
   )`);
@@ -155,6 +200,18 @@ db.serialize(() => {
     const columnNames = rows.map(row => row.name);
     if (!columnNames.includes('estado_manual')) {
       db.run(`ALTER TABLE habitaciones ADD COLUMN estado_manual TEXT DEFAULT 'disponible'`);
+    }
+    if (!columnNames.includes('mantenimiento_hasta')) {
+      db.run(`ALTER TABLE habitaciones ADD COLUMN mantenimiento_hasta TEXT`);
+    }
+    if (!columnNames.includes('mantenimiento_estimado_horas')) {
+      db.run(`ALTER TABLE habitaciones ADD COLUMN mantenimiento_estimado_horas REAL`);
+    }
+    if (!columnNames.includes('limpieza_hasta')) {
+      db.run(`ALTER TABLE habitaciones ADD COLUMN limpieza_hasta TEXT`);
+    }
+    if (!columnNames.includes('limpieza_referencia_checkout')) {
+      db.run(`ALTER TABLE habitaciones ADD COLUMN limpieza_referencia_checkout TEXT`);
     }
   });
 
@@ -348,6 +405,73 @@ db.serialize(() => {
     FOREIGN KEY (id_reserva) REFERENCES reservas(id) ON DELETE CASCADE
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS alertas_disponibilidad_habitacion (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_habitacion INTEGER NOT NULL,
+    canal TEXT NOT NULL,
+    destinatario TEXT NOT NULL,
+    estado TEXT DEFAULT 'activa',
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    notificado_en DATETIME,
+    FOREIGN KEY (id_habitacion) REFERENCES habitaciones(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE UNIQUE INDEX IF NOT EXISTS ux_alerta_disponibilidad_activa
+    ON alertas_disponibilidad_habitacion(id_habitacion, canal, destinatario, estado)`);
+
+  // FAVORITOS DE ALOJAMIENTOS POR USUARIO
+  db.run(`CREATE TABLE IF NOT EXISTS favoritos_alojamientos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario INTEGER NOT NULL,
+    id_alojamiento INTEGER NOT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_alojamiento) REFERENCES alojamientos(id) ON DELETE CASCADE,
+    UNIQUE(id_usuario, id_alojamiento)
+  )`);
+
+  // Migracion de favoritos existentes: reservas historicas -> favoritos.
+  db.run(`
+    INSERT OR IGNORE INTO favoritos_alojamientos (id_usuario, id_alojamiento)
+    SELECT DISTINCT r.id_usuario, h.id_alojamiento
+    FROM reservas r
+    JOIN habitaciones h ON h.id = r.id_habitacion
+    WHERE r.id_usuario IS NOT NULL
+      AND r.estado IN ('pendiente', 'confirmada', 'en_curso', 'finalizada')
+  `);
+
+  db.run(`CREATE TABLE IF NOT EXISTS notificaciones_general (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    referencia_tipo TEXT,
+    referencia_id INTEGER,
+    canal TEXT NOT NULL,
+    destinatario TEXT NOT NULL,
+    mensaje TEXT NOT NULL,
+    estado TEXT DEFAULT 'pendiente_integracion',
+    payload_json TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS campanas_alojamiento (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_alojamiento INTEGER NOT NULL,
+    id_anfitrion INTEGER NOT NULL,
+    asunto TEXT NOT NULL,
+    contenido TEXT NOT NULL,
+    url_alojamiento TEXT NOT NULL,
+    mensaje_final TEXT NOT NULL,
+    tipo_envio TEXT NOT NULL CHECK(tipo_envio IN ('inmediata','programada')),
+    fecha_programada DATETIME,
+    estado TEXT NOT NULL DEFAULT 'programada' CHECK(estado IN ('programada','enviada','error')),
+    destinatarios_total INTEGER DEFAULT 0,
+    enviados_total INTEGER DEFAULT 0,
+    error_detalle TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    enviado_en DATETIME,
+    FOREIGN KEY (id_alojamiento) REFERENCES alojamientos(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_anfitrion) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+
   // RESEÑAS
   db.run(`CREATE TABLE IF NOT EXISTS reseñas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -386,6 +510,33 @@ db.serialize(() => {
     FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE
   )`);
 
+  // CODIGOS DE CONFIRMACION DE RESERVA
+  db.run(`CREATE TABLE IF NOT EXISTS reserva_codigos_confirmacion (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reserva_id INTEGER NOT NULL,
+    codigo TEXT NOT NULL UNIQUE,
+    estado TEXT NOT NULL DEFAULT 'activo' CHECK(estado IN ('activo','usado','cancelado')),
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    usado_en DATETIME,
+    cancelado_en DATETIME,
+    FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_reserva_codigos_reserva_estado
+    ON reserva_codigos_confirmacion(reserva_id, estado)`);
+
+  db.run(`CREATE TRIGGER IF NOT EXISTS trg_cancelar_codigo_confirmacion_reserva
+    AFTER UPDATE OF estado ON reservas
+    FOR EACH ROW
+    WHEN NEW.estado = 'cancelada'
+    BEGIN
+      UPDATE reserva_codigos_confirmacion
+      SET estado = 'cancelado',
+          cancelado_en = COALESCE(cancelado_en, CURRENT_TIMESTAMP)
+      WHERE reserva_id = NEW.id
+        AND estado = 'activo';
+    END;`);
+
   // MENSAJES
   db.run(`CREATE TABLE IF NOT EXISTS mensajes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -402,6 +553,40 @@ db.serialize(() => {
     FOREIGN KEY (turista_id) REFERENCES usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (reserva_id) REFERENCES reservas(id) ON DELETE CASCADE
   )`);
+
+  // EQUIPO DEL ALOJAMIENTO (miembros invitados)
+  db.run(`CREATE TABLE IF NOT EXISTS equipo_alojamiento (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_alojamiento INTEGER NOT NULL,
+    correo TEXT NOT NULL,
+    rol TEXT NOT NULL DEFAULT 'administrador',
+    estado TEXT NOT NULL DEFAULT 'pendiente',
+    token_invitacion TEXT UNIQUE,
+    token_expira_en DATETIME,
+    id_usuario INTEGER,
+    invitado_por INTEGER,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_alojamiento) REFERENCES alojamientos(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE SET NULL,
+    FOREIGN KEY (invitado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+    UNIQUE(id_alojamiento, correo)
+  )`);
+
+  // CHAT INTERNO ENTRE PANELES (ADMIN/ANFITRION/SOPORTE)
+  db.run(`CREATE TABLE IF NOT EXISTS panel_chat_mensajes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emisor_id INTEGER NOT NULL,
+    receptor_id INTEGER NOT NULL,
+    canal TEXT NOT NULL DEFAULT 'gestion',
+    contenido TEXT NOT NULL,
+    leido INTEGER NOT NULL DEFAULT 0,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (emisor_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (receptor_id) REFERENCES usuarios(id) ON DELETE CASCADE
+  )`);
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_panel_chat_pair ON panel_chat_mensajes (emisor_id, receptor_id, canal, creado_en)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_panel_chat_unread ON panel_chat_mensajes (receptor_id, leido, canal, creado_en)`);
 });
 
 module.exports = db;

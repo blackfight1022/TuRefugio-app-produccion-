@@ -2,11 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Iniciar Sesión - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Iniciar Sesión - Tu Refugio</title>
   <link rel="stylesheet" href="login.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="/global.css" />
 </head>
 <body>
   <header>
@@ -46,6 +50,7 @@
 
         <button type="submit">Ingresar</button>
       </form>
+      <p><a href="../restablecer_contraseña/restablecer.html"><u>¿Olvidé mi contraseña?</u></a></p>
       <p>¿No tienes cuenta? <a href="../registro_turista/turista.html"><u>Regístrate</u></a></p>
 
       <footer class="panel-footer">
@@ -60,6 +65,8 @@
 window.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('token');
   const rol = localStorage.getItem('rol');
+  const panelDestino = localStorage.getItem('panel_destino');
+  const esSuperadmin = String(localStorage.getItem('es_superadmin') || '0') === '1';
 
   if (token && rol) {
     Swal.fire({
@@ -71,8 +78,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     setTimeout(() => {
-      if (rol === 'admin') {
-        window.location.href = '../bienvenido_admin/b_admin.html';
+      if (panelDestino) {
+        window.location.href = panelDestino;
+
+      } else if (rol === 'admin') {
+        window.location.href = esSuperadmin ? '../bienvenido_admin/b_admin.html' : '../bienvenido_admin/admin_alojamientos.html';
 
       } else if (rol === 'anfitrion') {
         window.location.href = '../anfitrion/anfitrion.html';
@@ -88,13 +98,24 @@ document.getElementById('loginForm').addEventListener('submit', async function (
   e.preventDefault();
 
   const correo = document.getElementById('email').value.trim();
+  const correoNormalizado = correo.toLowerCase();
   const contraseña = document.getElementById('password').value.trim();
+  const correoAdminBloqueado = 'cuervomiguel737@gmail.com';
 
   if (!correo || !contraseña) {
     Swal.fire({
       icon: 'warning',
       title: 'Campos obligatorios',
       text: 'Debes ingresar correo y contraseña'
+    });
+    return;
+  }
+
+  if (correoNormalizado === correoAdminBloqueado) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Usuario no encontrado.'
     });
     return;
   }
@@ -118,10 +139,18 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     }
 
     const token = result.token;
-    const rol = result.usuario.rol.toLowerCase().trim();
+    const rol = String(result.usuario.rol || '').toLowerCase().trim();
+    const panelDestino = String(result.panel_destino || result.usuario.panel_destino || '').trim();
+    const esSuperadmin = Number(result.usuario.es_superadmin || 0) === 1 ? '1' : '0';
 
     localStorage.setItem('token', token);
     localStorage.setItem('rol', rol);
+    localStorage.setItem('es_superadmin', esSuperadmin);
+    if (panelDestino) {
+      localStorage.setItem('panel_destino', panelDestino);
+    } else {
+      localStorage.removeItem('panel_destino');
+    }
 
     Swal.fire({
       icon: 'success',
@@ -132,8 +161,11 @@ document.getElementById('loginForm').addEventListener('submit', async function (
     });
 
     setTimeout(() => {
-      if (rol === 'admin') {
-        window.location.href = '../bienvenido_admin/b_admin.html';
+      if (panelDestino) {
+        window.location.href = panelDestino;
+
+      } else if (rol === 'admin') {
+        window.location.href = esSuperadmin === '1' ? '../bienvenido_admin/b_admin.html' : '../bienvenido_admin/admin_alojamientos.html';
 
       } else if (rol === 'anfitrion') {
         window.location.href = '../anfitrion/anfitrion.html';
@@ -162,3 +194,10 @@ document.getElementById('loginForm').addEventListener('submit', async function (
 </script>
 </body>
 </html>
+
+
+
+
+
+
+

@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Administración - Tu Refugio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Panel de Administración - Tu Refugio</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="b_admin.css">
+  <link rel="stylesheet" href="/css/panel-chat.css" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="/global.css" />
 </head>
 <body>
   <div class="admin-layout">
@@ -20,8 +27,10 @@
           <li><a href="#dashboard">Inicio del panel</a></li>
           <li><a href="#extractos-reservas">Extractos de reservas</a></li>
           <li><a href="#extractos-transacciones">Transacciones de reservas</a></li>
+          <li><a href="#finanzas-reservas">Finanzas de reservas</a></li>
+          <li><a href="#tablero-devoluciones">Tablero de devoluciones</a></li>
           <li><a href="#usuarios-control">Gestión de usuarios</a></li>
-          <li><a href="#" onclick="cerrarSesion()">Salir</a></li>
+          <li><a href="#" id="btnCerrarSesionAdmin">Salir</a></li>
         </ul>
       </nav>
     </aside>
@@ -54,7 +63,12 @@
       <section class="panel-admin" id="extractos-reservas">
         <div class="panel-header">
           <h2>Extractos de Reservas</h2>
-          <button onclick="cargarExtractosReservas()">Actualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="filtro-reservas-inicio" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha inicio reservas">
+            <input type="date" id="filtro-reservas-fin" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha fin reservas">
+            <button type="button" data-admin-action="cargar-extractos-reservas">Actualizar</button>
+            <button type="button" class="sec" data-admin-action="descargar-pdf" data-pdf-tipo="reservas">Descargar informe (PDF)</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -79,7 +93,12 @@
       <section class="panel-admin" id="extractos-transacciones">
         <div class="panel-header">
           <h2>Transacciones de Reservas</h2>
-          <button onclick="cargarExtractosTransacciones()">Actualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="filtro-transacciones-inicio" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha inicio transacciones">
+            <input type="date" id="filtro-transacciones-fin" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha fin transacciones">
+            <button type="button" data-admin-action="cargar-extractos-transacciones">Actualizar</button>
+            <button type="button" class="sec" data-admin-action="descargar-pdf" data-pdf-tipo="transacciones">Descargar informe (PDF)</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -101,10 +120,190 @@
         </div>
       </section>
 
+      <section class="panel-admin" id="finanzas-reservas">
+        <div class="panel-header">
+          <h2>Distribución por Reserva: Plataforma 15% | Alojamiento 85%</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="filtro-finanzas-alojamiento" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;min-width:220px;">
+              <option value="">Todos los alojamientos</option>
+            </select>
+            <input type="date" id="filtro-finanzas-inicio" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha inicio finanzas">
+            <input type="date" id="filtro-finanzas-fin" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha fin finanzas">
+            <button type="button" data-admin-action="cargar-finanzas">Actualizar</button>
+            <button type="button" class="sec" data-admin-action="descargar-pdf" data-pdf-tipo="finanzas">Descargar informe (PDF)</button>
+          </div>
+        </div>
+        <p class="nota-panel" style="margin-top:6px;">Regla financiera: de cada reserva, el 15% del valor total pagado corresponde a la plataforma y el 85% al alojamiento. Si hay cancelación con devolución, el alojamiento puede aplicar un descuento parcial o total al usuario; ese valor se descuenta del alojamiento y no reduce la comisión del 15% de la plataforma.</p>
+
+        <section class="cards-admin" style="margin-top:10px;">
+          <div class="admin-card resumen-card">
+            <h2>Total devengado plataforma (15%)</h2>
+            <p id="fin-devengado-plataforma">$0</p>
+            <small id="fin-devengado-plataforma-detalle" style="color:#5a6a7a;">Suma del 15% de cada reserva del filtro actual.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>Saldo efectivo devengado alojamientos</h2>
+            <p id="fin-devengado-alojamientos">$0</p>
+            <small id="fin-devengado-alojamientos-detalle" style="color:#5a6a7a;">Saldo total del dinero efectivo que devenga el alojamiento.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>Saldo total reservas canceladas</h2>
+            <p id="fin-base-cancelada">$0</p>
+            <small id="fin-base-cancelada-detalle" style="color:#5a6a7a;">Saldo total acumulado de reservas canceladas.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>Porcentaje total descontado a usuarios</h2>
+            <p id="fin-devolucion-total">0%</p>
+            <small id="fin-devolucion-total-detalle" style="color:#5a6a7a;">Porcentaje agregado descontado a usuarios, que puede ser parcial o total según la devolución aplicada.</small>
+          </div>
+        </section>
+
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 10px;">
+          <input
+            id="filtro-devengado-busqueda"
+            type="text"
+            placeholder="Buscar alojamiento para filtrar devengados"
+            data-admin-action="buscar-devengados"
+            style="padding:8px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;min-width:320px;"
+          />
+        </div>
+
+        <div class="table-wrap" style="margin-bottom:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Alojamiento</th>
+                <th>Reservas</th>
+                <th>Devengado plataforma (15%)</th>
+                <th>Devengado alojamiento (85% neto)</th>
+                <th>Base cancelada</th>
+                <th>Valor devolución</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-devengados-alojamiento-body"></tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Reserva</th>
+                <th>Alojamiento</th>
+                <th>Estado pago</th>
+                <th>Valor reserva</th>
+                <th>% devolución</th>
+                <th>Valor devolución</th>
+                <th>Plataforma (15%)</th>
+                <th>Alojamiento (85% neto)</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-finanzas-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel-admin" id="tablero-devoluciones">
+        <div class="panel-header">
+          <h2>Tablero Informativo de Devoluciones por Cancelación (Pasarela)</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="filtro-tablero-anfitrion" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;min-width:220px;">
+              <option value="">Todos los anfitriones</option>
+            </select>
+            <select id="filtro-tablero-pasarela" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;min-width:180px;">
+              <option value="">Todas las pasarelas</option>
+              <option value="wompi">Wompi</option>
+              <option value="pse">PSE</option>
+            </select>
+            <select id="filtro-tablero-metodo" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;min-width:180px;">
+              <option value="">Todos los métodos</option>
+              <option value="pse">PSE</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="nequi">Nequi</option>
+              <option value="daviplata">Daviplata</option>
+            </select>
+            <button type="button" data-admin-action="cargar-tablero-devoluciones">Actualizar tablero</button>
+            <button type="button" class="sec" data-admin-action="descargar-pdf" data-pdf-tipo="tablero-devoluciones">Descargar informe (PDF)</button>
+          </div>
+        </div>
+
+        <p class="nota-panel">Este tablero informa transacciones de reservas canceladas: valor pagado por turista al alojamiento, valor devuelto por el alojamiento, porcentaje de devolución, saldo/porcentaje descontado, y pasarela utilizada.</p>
+
+        <section class="cards-admin" style="margin-top:10px;">
+          <div class="admin-card resumen-card">
+            <h2>Total pagado por turistas</h2>
+            <p id="tab-dev-total-pagado">$0</p>
+            <small id="tab-dev-total-pagado-det" style="color:#5a6a7a;">Suma pagada en reservas luego canceladas.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>Total devuelto por alojamientos</h2>
+            <p id="tab-dev-total-devuelto">$0</p>
+            <small id="tab-dev-total-devuelto-det" style="color:#5a6a7a;">Valor reintegrado por pasarela a turistas.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>Total descontado por alojamientos</h2>
+            <p id="tab-dev-total-descuento">$0</p>
+            <small id="tab-dev-total-descuento-det" style="color:#5a6a7a;">Saldo retenido o descontado al turista.</small>
+          </div>
+          <div class="admin-card resumen-card">
+            <h2>% devuelto / % descontado global</h2>
+            <p id="tab-dev-porcentajes">0% / 0%</p>
+            <small id="tab-dev-porcentajes-det" style="color:#5a6a7a;">Relación agregada sobre el total pagado.</small>
+          </div>
+        </section>
+
+        <div class="table-wrap" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Reserva</th>
+                <th>Alojamiento</th>
+                <th>Turista</th>
+                <th>Pasarela</th>
+                <th>Valor pagado</th>
+                <th>% devolución</th>
+                <th>Valor devuelto</th>
+                <th>% descuento</th>
+                <th>Saldo descontado</th>
+                <th>Referencia pago / reembolso</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-tablero-devoluciones-body"></tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap" style="margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Anfitrión</th>
+                <th>Transacciones</th>
+                <th>Total pagado</th>
+                <th>Total devuelto</th>
+                <th>Total descontado</th>
+                <th>% devuelto global anfitrión</th>
+                <th>% descontado global anfitrión</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-tablero-devoluciones-host-body"></tbody>
+          </table>
+        </div>
+        <p class="nota-riesgo-descuento" style="margin-top:8px;">
+          <span class="chip-riesgo chip-riesgo-normal">Descuento bajo &lt; 30%</span>
+          <span class="chip-riesgo chip-riesgo-medio">Descuento medio 30% - 49.99%</span>
+          <span class="chip-riesgo chip-riesgo-alto">Descuento alto ≥ 50%</span>
+        </p>
+      </section>
+
       <section class="panel-admin" id="usuarios-control">
         <div class="panel-header">
           <h2>Control de Usuarios</h2>
-          <button onclick="cargarUsuarios()">Actualizar</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="date" id="filtro-fecha-inicio" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha inicio">
+            <input type="date" id="filtro-fecha-fin" style="padding:6px 10px;border:1.5px solid #DDE5EE;border-radius:8px;font-size:0.9rem;" title="Fecha fin">
+            <button type="button" data-admin-action="cargar-usuarios">Actualizar</button>
+            <button type="button" class="sec" data-admin-action="descargar-pdf" data-pdf-tipo="usuarios">Descargar informe (PDF)</button>
+          </div>
         </div>
         <p class="nota-panel">El administrador puede suspender temporalmente anfitriones o turistas y eliminar usuarios. Si un anfitrión está suspendido no podrá recibir reservas; turistas suspendidos no podrán ingresar a su panel.</p>
         <div class="table-wrap">
@@ -115,6 +314,7 @@
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Rol</th>
+                <th>Alojamiento (admin)</th>
                 <th>Estado</th>
                 <th>Suspensión Hasta</th>
                 <th>Acciones</th>
@@ -129,6 +329,50 @@
 
   <script>
     const API_BASE = '/api/admin';
+    let autoRefreshUsuarios = null;
+    let _reservasCargadas = [];
+    let _transaccionesCargadas = [];
+    let _finanzasReservas = [];
+    let _totalesFinanzas = null;
+    let _tableroDevoluciones = [];
+    let _totalesTableroDevoluciones = null;
+
+    function obtenerIdUsuarioDesdeToken() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return 0;
+        const payload = JSON.parse(atob(token.split('.')[1] || ''));
+        return Number(payload?.id || 0);
+      } catch {
+        return 0;
+      }
+    }
+
+    function esAdminPlataformaLocal() {
+      // Fuente primaria: localStorage guardado al hacer login
+      if (String(localStorage.getItem('es_superadmin') || '0') === '1') return true;
+      // Fallback: si el usuario actual aparece en la lista con es_superadmin = 1
+      const miId = obtenerIdUsuarioDesdeToken();
+      if (miId && window._usuariosCargados) {
+        const yo = window._usuariosCargados.find((u) => Number(u.id) === miId);
+        if (yo && Number(yo.es_superadmin || 0) === 1) {
+          localStorage.setItem('es_superadmin', '1');
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function tieneSesionAdminLocal() {
+      const token = localStorage.getItem('token');
+      const rol = String(localStorage.getItem('rol') || '').toLowerCase().trim();
+      return Boolean(token) && rol === 'admin';
+    }
+
+    // Guardia temprana: bloquea acceso por historial antes de cargar datos sensibles.
+    if (!tieneSesionAdminLocal()) {
+      window.location.replace('../admin/admin.html');
+    }
 
     function obtenerHeadersAuth() {
       const token = localStorage.getItem('token');
@@ -148,6 +392,10 @@
     function safeText(value) {
       if (value === null || value === undefined || value === '') return '-';
       return String(value);
+    }
+
+    function formatoMoneda(valor) {
+      return `$${Number(valor || 0).toLocaleString('es-CO')}`;
     }
 
     async function fetchAdmin(url, options = {}) {
@@ -177,6 +425,7 @@
 
     async function cargarExtractosReservas() {
       const rows = await fetchAdmin(`${API_BASE}/extractos/reservas`);
+      _reservasCargadas = Array.isArray(rows) ? rows : [];
       const tbody = document.getElementById('tabla-reservas-body');
 
       tbody.innerHTML = rows.length
@@ -198,6 +447,7 @@
 
     async function cargarExtractosTransacciones() {
       const rows = await fetchAdmin(`${API_BASE}/extractos/transacciones`);
+      _transaccionesCargadas = Array.isArray(rows) ? rows : [];
       const tbody = document.getElementById('tabla-transacciones-body');
 
       tbody.innerHTML = rows.length
@@ -215,6 +465,294 @@
             </tr>
           `).join('')
         : '<tr><td colspan="9">No hay transacciones registradas.</td></tr>';
+    }
+
+    function construirQueryFinanzas() {
+      const params = new URLSearchParams();
+      const alojamientoId = document.getElementById('filtro-finanzas-alojamiento')?.value || '';
+      const fechaInicio = document.getElementById('filtro-finanzas-inicio')?.value || '';
+      const fechaFin = document.getElementById('filtro-finanzas-fin')?.value || '';
+
+      if (alojamientoId) params.set('alojamiento_id', alojamientoId);
+      if (fechaInicio) params.set('fecha_inicio', fechaInicio);
+      if (fechaFin) params.set('fecha_fin', fechaFin);
+
+      const query = params.toString();
+      return query ? `?${query}` : '';
+    }
+
+    function construirQueryTableroDevoluciones() {
+      const params = new URLSearchParams();
+      const alojamientoId = document.getElementById('filtro-finanzas-alojamiento')?.value || '';
+      const fechaInicio = document.getElementById('filtro-finanzas-inicio')?.value || '';
+      const fechaFin = document.getElementById('filtro-finanzas-fin')?.value || '';
+      const anfitrionId = document.getElementById('filtro-tablero-anfitrion')?.value || '';
+      const pasarela = document.getElementById('filtro-tablero-pasarela')?.value || '';
+      const metodoPago = document.getElementById('filtro-tablero-metodo')?.value || '';
+
+      if (alojamientoId) params.set('alojamiento_id', alojamientoId);
+      if (fechaInicio) params.set('fecha_inicio', fechaInicio);
+      if (fechaFin) params.set('fecha_fin', fechaFin);
+      if (anfitrionId) params.set('anfitrion_id', anfitrionId);
+      if (pasarela) params.set('pasarela', pasarela);
+      if (metodoPago) params.set('metodo_pago', metodoPago);
+
+      const query = params.toString();
+      return query ? `?${query}` : '';
+    }
+
+    function renderizarTotalesTableroDevoluciones(totales) {
+      const totalPagado = Number(totales?.total_pagado_turistas || 0);
+      const totalDevuelto = Number(totales?.total_devuelto_turistas || 0);
+      const totalDescuento = Number(totales?.total_descuento_alojamientos || 0);
+      const pctDevuelto = Number(totales?.porcentaje_devuelto_global || 0);
+      const pctDescuento = Number(totales?.porcentaje_descuento_global || 0);
+
+      document.getElementById('tab-dev-total-pagado').textContent = formatoMoneda(totalPagado);
+      document.getElementById('tab-dev-total-devuelto').textContent = formatoMoneda(totalDevuelto);
+      document.getElementById('tab-dev-total-descuento').textContent = formatoMoneda(totalDescuento);
+      document.getElementById('tab-dev-porcentajes').textContent = `${pctDevuelto.toFixed(2)}% / ${pctDescuento.toFixed(2)}%`;
+
+      document.getElementById('tab-dev-total-pagado-det').textContent = `Transacciones: ${Number(totales?.total_transacciones || 0)}.`;
+      document.getElementById('tab-dev-total-devuelto-det').textContent = `Devuelto por pasarela: ${formatoMoneda(totalDevuelto)}.`;
+      document.getElementById('tab-dev-total-descuento-det').textContent = `Descontado por alojamiento: ${formatoMoneda(totalDescuento)}.`;
+      document.getElementById('tab-dev-porcentajes-det').textContent = 'Primer valor = % devuelto global, segundo valor = % descontado global.';
+    }
+
+    function renderizarTablaTableroDevoluciones() {
+      const tbody = document.getElementById('tabla-tablero-devoluciones-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = (_tableroDevoluciones || []).length
+        ? _tableroDevoluciones.map((r) => `
+            <tr>
+              <td>${safeText(r.reserva_id)}</td>
+              <td>${safeText(r.alojamiento)}<br><small>Host: ${safeText(r.anfitrion)}</small></td>
+              <td>${safeText(r.turista)}<br><small>${safeText(r.correo_turista)}</small></td>
+              <td>${safeText(r.pasarela_reembolso || r.pasarela_pago)}<br><small>${safeText(r.metodo_pago)}</small></td>
+              <td>${formatoMoneda(r.valor_pagado)}</td>
+              <td>${Number(r.porcentaje_devolucion || 0).toFixed(2)}%</td>
+              <td>${formatoMoneda(r.valor_devolucion)}</td>
+              <td>${Number(r.porcentaje_descuento || 0).toFixed(2)}%</td>
+              <td>${formatoMoneda(r.saldo_descuento)}</td>
+              <td>
+                <small>Pago: ${safeText(r.referencia_pago)}</small><br>
+                <small>Reembolso: ${safeText(r.referencia_reembolso)}</small>
+              </td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="10">No hay transacciones de devolución para el filtro actual.</td></tr>';
+    }
+
+    function renderizarTotalesPorAnfitrionTablero() {
+      const tbody = document.getElementById('tabla-tablero-devoluciones-host-body');
+      if (!tbody) return;
+
+      const mapa = new Map();
+      for (const r of (_tableroDevoluciones || [])) {
+        const key = String(r.anfitrion || '-');
+        if (!mapa.has(key)) {
+          mapa.set(key, {
+            anfitrion: key,
+            transacciones: 0,
+            pagado: 0,
+            devuelto: 0,
+            descontado: 0
+          });
+        }
+
+        const acc = mapa.get(key);
+        acc.transacciones += 1;
+        acc.pagado += Number(r.valor_pagado || 0);
+        acc.devuelto += Number(r.valor_devolucion || 0);
+        acc.descontado += Number(r.saldo_descuento || 0);
+      }
+
+      const prioridadRiesgo = (row) => {
+        const pctDesc = row.pagado > 0 ? ((row.descontado / row.pagado) * 100) : 0;
+        if (pctDesc >= 50) return 3;
+        if (pctDesc >= 30) return 2;
+        return 1;
+      };
+
+      const rows = Array.from(mapa.values()).sort((a, b) => {
+        const riesgoB = prioridadRiesgo(b);
+        const riesgoA = prioridadRiesgo(a);
+        if (riesgoB !== riesgoA) return riesgoB - riesgoA;
+        return b.pagado - a.pagado;
+      });
+      tbody.innerHTML = rows.length
+        ? rows.map((r) => {
+            const pctDev = r.pagado > 0 ? ((r.devuelto / r.pagado) * 100) : 0;
+            const pctDesc = r.pagado > 0 ? ((r.descontado / r.pagado) * 100) : 0;
+            const claseRiesgo = pctDesc >= 50
+              ? 'riesgo-descuento-alto'
+              : (pctDesc >= 30 ? 'riesgo-descuento-medio' : 'riesgo-descuento-normal');
+            return `
+              <tr class="${claseRiesgo}">
+                <td>${safeText(r.anfitrion)}</td>
+                <td>${Number(r.transacciones || 0).toLocaleString('es-CO')}</td>
+                <td>${formatoMoneda(r.pagado)}</td>
+                <td>${formatoMoneda(r.devuelto)}</td>
+                <td>${formatoMoneda(r.descontado)}</td>
+                <td>${pctDev.toFixed(2)}%</td>
+                <td>${pctDesc.toFixed(2)}%</td>
+              </tr>
+            `;
+          }).join('')
+        : '<tr><td colspan="7">No hay datos para resumir por anfitrión.</td></tr>';
+    }
+
+    async function cargarTableroDevoluciones() {
+      const query = construirQueryTableroDevoluciones();
+      const data = await fetchAdmin(`${API_BASE}/transacciones/devoluciones${query}`);
+
+      _tableroDevoluciones = Array.isArray(data?.transacciones) ? data.transacciones : [];
+      _totalesTableroDevoluciones = data?.totales || null;
+
+      renderizarTotalesTableroDevoluciones(_totalesTableroDevoluciones || {
+        total_transacciones: 0,
+        total_pagado_turistas: 0,
+        total_devuelto_turistas: 0,
+        total_descuento_alojamientos: 0,
+        porcentaje_devuelto_global: 0,
+        porcentaje_descuento_global: 0
+      });
+
+      renderizarTablaTableroDevoluciones();
+      renderizarTotalesPorAnfitrionTablero();
+    }
+
+    function renderizarTotalesFinanzas(totales) {
+      document.getElementById('fin-devengado-plataforma').textContent = formatoMoneda(totales.total_comision_plataforma || 0);
+      document.getElementById('fin-devengado-alojamientos').textContent = formatoMoneda(totales.total_neto_alojamientos || 0);
+      document.getElementById('fin-base-cancelada').textContent = formatoMoneda(totales.total_cancelado || 0);
+
+      const totalCancelado = Number(totales.total_cancelado || 0);
+      const totalDevoluciones = Number(totales.total_devoluciones || 0);
+      const pctDevolucionSobreCancelado = totalCancelado > 0 ? ((totalDevoluciones / totalCancelado) * 100) : 0;
+      document.getElementById('fin-devolucion-total').textContent = `${pctDevolucionSobreCancelado.toFixed(2)}%`;
+      document.getElementById('fin-devengado-plataforma-detalle').textContent = 'Suma del 15% de cada reserva (incluye canceladas).';
+      document.getElementById('fin-devengado-alojamientos-detalle').textContent = `Saldo efectivo total para alojamientos: ${formatoMoneda(totales.total_neto_alojamientos || 0)}.`;
+      document.getElementById('fin-base-cancelada-detalle').textContent = `Saldo total acumulado de reservas canceladas: ${formatoMoneda(totalCancelado)}.`;
+      document.getElementById('fin-devolucion-total-detalle').textContent = `Monto total descontado a usuarios: ${formatoMoneda(totalDevoluciones)}. Puede ser un descuento parcial o total según la devolución aplicada por el alojamiento.`;
+    }
+
+    function renderizarDevengadosPorAlojamiento() {
+      const termino = String(document.getElementById('filtro-devengado-busqueda')?.value || '').toLowerCase().trim();
+      const tbody = document.getElementById('tabla-devengados-alojamiento-body');
+
+      const mapa = new Map();
+      for (const r of (_finanzasReservas || [])) {
+        const key = String(r.alojamiento_id || r.alojamiento || 'sin-alojamiento');
+        if (!mapa.has(key)) {
+          mapa.set(key, {
+            alojamiento: String(r.alojamiento || '-'),
+            reservas: 0,
+            devengadoPlataforma: 0,
+            devengadoAlojamiento: 0,
+            baseCancelada: 0,
+            devolucion: 0
+          });
+        }
+
+        const item = mapa.get(key);
+        item.reservas += 1;
+        item.devengadoPlataforma += Number(r.comision_plataforma || 0);
+        item.devengadoAlojamiento += Number(r.neto_alojamiento || 0);
+
+        if (String(r.estado_pago || '').toLowerCase() === 'cancelado') {
+          item.baseCancelada += Number(r.valor_reserva || 0);
+          item.devolucion += Number(r.valor_devolucion || 0);
+        }
+      }
+
+      let rows = Array.from(mapa.values());
+      if (termino) {
+        rows = rows.filter((r) => r.alojamiento.toLowerCase().includes(termino));
+      }
+
+      tbody.innerHTML = rows.length
+        ? rows.map((r) => `
+            <tr>
+              <td>${safeText(r.alojamiento)}</td>
+              <td>${Number(r.reservas || 0).toLocaleString('es-CO')}</td>
+              <td>${formatoMoneda(r.devengadoPlataforma)}</td>
+              <td>${formatoMoneda(r.devengadoAlojamiento)}</td>
+              <td>${formatoMoneda(r.baseCancelada)}</td>
+              <td>${formatoMoneda(r.devolucion)}</td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="6">No hay devengados por alojamiento para el filtro actual.</td></tr>';
+    }
+
+    async function cargarAlojamientosFinanzas() {
+      const select = document.getElementById('filtro-finanzas-alojamiento');
+      if (!select) return;
+
+      const actual = String(select.value || '');
+      const rows = await fetchAdmin(`${API_BASE}/alojamientos/lista`);
+      const opciones = ['<option value="">Todos los alojamientos</option>']
+        .concat((rows || []).map((a) => `<option value="${Number(a.id || 0)}">${safeText(a.titulo)} (#${Number(a.id || 0)})</option>`));
+      select.innerHTML = opciones.join('');
+      if (actual) select.value = actual;
+    }
+
+    async function cargarAnfitrionesTablero() {
+      const select = document.getElementById('filtro-tablero-anfitrion');
+      if (!select) return;
+
+      const actual = String(select.value || '');
+      const rows = await fetchAdmin(`${API_BASE}/anfitriones/lista`);
+      const opciones = ['<option value="">Todos los anfitriones</option>']
+        .concat((rows || []).map((a) => `<option value="${Number(a.id || 0)}">${safeText(a.nombre)} (#${Number(a.id || 0)})</option>`));
+      select.innerHTML = opciones.join('');
+      if (actual) select.value = actual;
+    }
+
+    async function cargarFinanzasReservas() {
+      const query = construirQueryFinanzas();
+      const data = await fetchAdmin(`${API_BASE}/finanzas/reservas${query}`);
+
+      _finanzasReservas = Array.isArray(data?.reservas) ? data.reservas : [];
+      _totalesFinanzas = data?.totales || null;
+
+      renderizarTotalesFinanzas(_totalesFinanzas || {
+        total_reservas: 0,
+        valor_total_reservas: 0,
+        total_pago: 0,
+        total_pendiente: 0,
+        total_cancelado: 0,
+        total_devoluciones: 0,
+        total_comision_plataforma: 0,
+        total_neto_alojamientos: 0
+      });
+
+      const tbody = document.getElementById('tabla-finanzas-body');
+      tbody.innerHTML = _finanzasReservas.length
+        ? _finanzasReservas.map((r) => {
+            const estado = String(r.estado_pago || '').toLowerCase();
+            const badge = estado === 'pago'
+              ? 'badge-confirmada'
+              : (estado === 'cancelado'
+                ? 'badge-cancelada'
+                : (estado === 'rechazado' ? 'badge-rechazado' : 'badge-pendiente'));
+            return `
+              <tr>
+                <td>${safeText(r.reserva_id)}</td>
+                <td>${safeText(r.alojamiento)}<br><small>Host: ${safeText(r.anfitrion)}</small></td>
+                <td><span class="badge ${badge}">${safeText(r.estado_pago)}</span></td>
+                <td>${formatoMoneda(r.valor_reserva)}</td>
+                <td>${Number(r.porcentaje_devolucion || 0).toFixed(2)}%</td>
+                <td>${formatoMoneda(r.valor_devolucion)}</td>
+                <td>${formatoMoneda(r.comision_plataforma)}</td>
+                <td>${formatoMoneda(r.neto_alojamiento)}</td>
+              </tr>
+            `;
+          }).join('')
+        : '<tr><td colspan="8">No hay información financiera para este filtro.</td></tr>';
+
+      renderizarDevengadosPorAlojamiento();
     }
 
     async function suspenderUsuario(id) {
@@ -280,16 +818,47 @@
 
     async function cargarUsuarios() {
       const rows = await fetchAdmin(`${API_BASE}/usuarios`);
+      window._usuariosCargados = rows;
       const tbody = document.getElementById('tabla-usuarios-body');
+      const adminActualId = obtenerIdUsuarioDesdeToken();
+      const adminPlataforma = esAdminPlataformaLocal();
 
-      tbody.innerHTML = rows.length
-        ? rows.map((u) => {
+      // Filtrar por fecha de creación si se especificó
+      const fechaInicio = document.getElementById('filtro-fecha-inicio')?.value || '';
+      const fechaFin = document.getElementById('filtro-fecha-fin')?.value || '';
+
+      const filtrados = rows.filter((u) => {
+        const rol = String(u.rol || '').toLowerCase();
+        const esMismoUsuario = Number(u.id || 0) === adminActualId;
+        const esAdminPlataforma = rol === 'admin' && Number(u.es_superadmin || 0) === 1;
+
+        // Ocultar: el propio admin logueado y admins de plataforma (superadmin) no gestionables
+        if (esMismoUsuario || (esAdminPlataforma && !adminPlataforma)) return false;
+        // Si es admin de plataforma y el actor también lo es, lo mostramos pero sin acciones
+        // Si es admin de alojamiento sin permisos, ocultarlo directamente
+        if (rol === 'admin' && !esAdminPlataforma && !adminPlataforma) return false;
+
+        if (fechaInicio && u.creado_en) {
+          if (new Date(u.creado_en) < new Date(fechaInicio)) return false;
+        }
+        if (fechaFin && u.creado_en) {
+          const fin = new Date(fechaFin);
+          fin.setHours(23, 59, 59, 999);
+          if (new Date(u.creado_en) > fin) return false;
+        }
+        return true;
+      });
+
+      tbody.innerHTML = filtrados.length
+        ? filtrados.map((u) => {
             const rol = String(u.rol || '').toLowerCase();
-            const esGestionable = rol === 'anfitrion' || rol === 'visitante';
+            const esAdminAlojamiento = rol === 'admin' && Number(u.es_superadmin || 0) !== 1;
+            const esGestionable = (rol === 'anfitrion' || rol === 'visitante' || (adminPlataforma && esAdminAlojamiento));
             const estado = String(u.estado_cuenta || 'activo').toLowerCase();
+            const alojamiento = rol === 'admin' ? safeText(u.alojamiento_asignado || 'Sin alojamiento') : '-';
             const btnSuspension = estado === 'suspendido'
-              ? `<button class="btn-mini btn-ok" onclick="activarUsuario(${u.id})" ${!esGestionable ? 'disabled' : ''}>Reactivar</button>`
-              : `<button class="btn-mini btn-warn" onclick="suspenderUsuario(${u.id})" ${!esGestionable ? 'disabled' : ''}>Suspender</button>`;
+              ? `<button class="btn-mini btn-ok" type="button" data-admin-user-action="activar" data-admin-user-id="${u.id}" ${!esGestionable ? 'disabled' : ''}>Reactivar</button>`
+              : `<button class="btn-mini btn-warn" type="button" data-admin-user-action="suspender" data-admin-user-id="${u.id}" ${!esGestionable ? 'disabled' : ''}>Suspender</button>`;
 
             return `
               <tr>
@@ -297,16 +866,346 @@
                 <td>${safeText(u.nombre)}</td>
                 <td>${safeText(u.correo)}</td>
                 <td>${safeText(u.rol)}</td>
+                <td>${alojamiento}</td>
                 <td><span class="badge ${estado === 'suspendido' ? 'badge-suspendido' : 'badge-activo'}">${safeText(u.estado_cuenta)}</span></td>
                 <td>${formatearFecha(u.suspension_hasta)}</td>
                 <td class="acciones-cell">
                   ${btnSuspension}
-                  <button class="btn-mini btn-danger" onclick="eliminarUsuario(${u.id})" ${!esGestionable ? 'disabled' : ''}>Eliminar</button>
+                  <button class="btn-mini btn-danger" type="button" data-admin-user-action="eliminar" data-admin-user-id="${u.id}" ${!esGestionable ? 'disabled' : ''}>Eliminar</button>
                 </td>
               </tr>
             `;
           }).join('')
-        : '<tr><td colspan="7">No hay usuarios disponibles.</td></tr>';
+        : '<tr><td colspan="8">No hay usuarios disponibles.</td></tr>';
+    }
+
+    function descargarInformePDF(tipo = 'usuarios') {
+      if (tipo === 'usuarios' && (!window._usuariosCargados || !window._usuariosCargados.length)) {
+        Swal.fire({ icon: 'info', title: 'Sin datos', text: 'Carga primero los usuarios.' });
+        return;
+      }
+
+      if (tipo === 'reservas' && (!_reservasCargadas || !_reservasCargadas.length)) {
+        Swal.fire({ icon: 'info', title: 'Sin datos', text: 'Carga primero los extractos de reservas.' });
+        return;
+      }
+
+      if (tipo === 'transacciones' && (!_transaccionesCargadas || !_transaccionesCargadas.length)) {
+        Swal.fire({ icon: 'info', title: 'Sin datos', text: 'Carga primero las transacciones.' });
+        return;
+      }
+
+      if (tipo === 'finanzas' && (!_finanzasReservas || !_finanzasReservas.length)) {
+        Swal.fire({ icon: 'info', title: 'Sin datos', text: 'Carga primero las finanzas de reservas.' });
+        return;
+      }
+
+      if (tipo === 'tablero-devoluciones' && (!_tableroDevoluciones || !_tableroDevoluciones.length)) {
+        Swal.fire({ icon: 'info', title: 'Sin datos', text: 'Carga primero el tablero de devoluciones.' });
+        return;
+      }
+
+      if (!window.jspdf || typeof window.jspdf.jsPDF !== 'function') {
+        Swal.fire({ icon: 'error', title: 'No disponible', text: 'No se pudo cargar la librería de PDF.' });
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const fecha = new Date();
+      const anfitrionTableroId = document.getElementById('filtro-tablero-anfitrion')?.value || '';
+      const anfitrionTableroTexto = document.getElementById('filtro-tablero-anfitrion')?.selectedOptions?.[0]?.textContent || '';
+      const pasarelaTablero = document.getElementById('filtro-tablero-pasarela')?.value || '';
+      const metodoTablero = document.getElementById('filtro-tablero-metodo')?.value || '';
+
+      const fechaInicio = tipo === 'usuarios'
+        ? (document.getElementById('filtro-fecha-inicio')?.value || '')
+        : (tipo === 'reservas'
+          ? (document.getElementById('filtro-reservas-inicio')?.value || '')
+          : (tipo === 'transacciones'
+            ? (document.getElementById('filtro-transacciones-inicio')?.value || '')
+            : ((tipo === 'finanzas' || tipo === 'tablero-devoluciones')
+              ? (document.getElementById('filtro-finanzas-inicio')?.value || '')
+              : '')));
+
+      const fechaFin = tipo === 'usuarios'
+        ? (document.getElementById('filtro-fecha-fin')?.value || '')
+        : (tipo === 'reservas'
+          ? (document.getElementById('filtro-reservas-fin')?.value || '')
+          : (tipo === 'transacciones'
+            ? (document.getElementById('filtro-transacciones-fin')?.value || '')
+            : ((tipo === 'finanzas' || tipo === 'tablero-devoluciones')
+              ? (document.getElementById('filtro-finanzas-fin')?.value || '')
+              : '')));
+
+      let y = 40;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      const titulo = tipo === 'usuarios'
+        ? 'Informe de Usuarios - Tu Refugio'
+        : (tipo === 'reservas'
+          ? 'Informe de Extractos de Reservas - Tu Refugio'
+          : (tipo === 'transacciones'
+            ? 'Informe de Transacciones - Tu Refugio'
+            : (tipo === 'finanzas'
+              ? 'Informe Distribución 15% Plataforma / 85% Alojamiento - Tu Refugio'
+              : 'Informe Tablero de Devoluciones por Cancelación - Tu Refugio')));
+      doc.text(titulo, 40, y);
+      y += 20;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Generado: ${fecha.toLocaleString('es-CO')}`, 40, y);
+      if (fechaInicio || fechaFin) {
+        y += 16;
+        doc.text(`Rango de fechas: ${fechaInicio || '(inicio)'} — ${fechaFin || '(fin)'}`, 40, y);
+      }
+      if (tipo === 'tablero-devoluciones' && pasarelaTablero) {
+        y += 16;
+        doc.text(`Pasarela filtrada: ${pasarelaTablero.toUpperCase()}`, 40, y);
+      }
+      if (tipo === 'tablero-devoluciones' && anfitrionTableroId) {
+        y += 16;
+        doc.text(`Anfitrión filtrado: ${anfitrionTableroTexto}`, 40, y);
+      }
+      if (tipo === 'tablero-devoluciones' && metodoTablero) {
+        y += 16;
+        doc.text(`Método filtrado: ${metodoTablero.toUpperCase()}`, 40, y);
+      }
+      y += 14;
+
+      if (tipo === 'reservas') {
+        const filas = (_reservasCargadas || []).filter((r) => {
+          const baseFecha = r.fecha_entrada || r.creado_en;
+          if (!baseFecha) return !fechaInicio && !fechaFin;
+          const f = new Date(baseFecha);
+          if (Number.isNaN(f.getTime())) return true;
+          if (fechaInicio && f < new Date(fechaInicio)) return false;
+          if (fechaFin) {
+            const fin = new Date(fechaFin);
+            fin.setHours(23, 59, 59, 999);
+            if (f > fin) return false;
+          }
+          return true;
+        }).map((r) => [
+          safeText(r.id),
+          safeText(r.turista),
+          safeText(r.correo_turista),
+          safeText(r.alojamiento),
+          safeText(r.habitacion),
+          safeText(r.fecha_entrada),
+          safeText(r.fecha_salida),
+          `$${Number(r.precio_total || 0).toLocaleString('es-CO')}`,
+          safeText(r.estado),
+          safeText(r.referencia_pago)
+        ]);
+
+        doc.autoTable({
+          startY: y,
+          head: [['ID', 'Turista', 'Correo', 'Alojamiento', 'Habitación', 'Entrada', 'Salida', 'Total', 'Estado', 'Referencia']],
+          body: filas,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+          theme: 'grid'
+        });
+        doc.save(`informe_reservas_${fecha.toISOString().slice(0, 10)}.pdf`);
+        return;
+      }
+
+      if (tipo === 'transacciones') {
+        const filas = (_transaccionesCargadas || []).filter((t) => {
+          const baseFecha = t.fecha;
+          if (!baseFecha) return !fechaInicio && !fechaFin;
+          const f = new Date(baseFecha);
+          if (Number.isNaN(f.getTime())) return true;
+          if (fechaInicio && f < new Date(fechaInicio)) return false;
+          if (fechaFin) {
+            const fin = new Date(fechaFin);
+            fin.setHours(23, 59, 59, 999);
+            if (f > fin) return false;
+          }
+          return true;
+        }).map((t) => [
+          safeText(t.id),
+          safeText(t.id_reserva),
+          safeText(t.turista),
+          safeText(t.correo_turista),
+          safeText(t.alojamiento),
+          `$${Number(t.monto || 0).toLocaleString('es-CO')}`,
+          safeText(t.metodo_pago),
+          safeText(t.estado),
+          safeText(t.pasarela),
+          safeText(t.referencia_pago)
+        ]);
+
+        doc.autoTable({
+          startY: y,
+          head: [['ID Pago', 'ID Reserva', 'Turista', 'Correo', 'Alojamiento', 'Monto', 'Método', 'Estado', 'Pasarela', 'Referencia']],
+          body: filas,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+          theme: 'grid'
+        });
+        doc.save(`informe_transacciones_${fecha.toISOString().slice(0, 10)}.pdf`);
+        return;
+      }
+
+      if (tipo === 'finanzas') {
+        const filas = (_finanzasReservas || []).map((r) => [
+          safeText(r.reserva_id),
+          safeText(r.alojamiento),
+          safeText(r.anfitrion),
+          safeText(r.estado_pago),
+          formatoMoneda(r.valor_reserva),
+          `${Number(r.porcentaje_devolucion || 0).toFixed(2)}%`,
+          formatoMoneda(r.valor_devolucion),
+          formatoMoneda(r.comision_plataforma),
+          formatoMoneda(r.neto_alojamiento)
+        ]);
+
+        const tot = _totalesFinanzas || {};
+        doc.setFontSize(9);
+        doc.text(
+          `Totales -> Pago: ${formatoMoneda(tot.total_pago || 0)} | Pendiente: ${formatoMoneda(tot.total_pendiente || 0)} | Cancelado: ${formatoMoneda(tot.total_cancelado || 0)} | Plataforma 15%: ${formatoMoneda(tot.total_comision_plataforma || 0)} | Alojamiento 85% neto: ${formatoMoneda(tot.total_neto_alojamientos || 0)}`,
+          40,
+          y
+        );
+
+        doc.autoTable({
+          startY: y + 12,
+          head: [['ID Reserva', 'Alojamiento', 'Host', 'Estado pago', 'Valor reserva', '% devolución', 'Valor devolución', 'Plataforma (15%)', 'Alojamiento (85% neto)']],
+          body: filas,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+          theme: 'grid'
+        });
+        doc.save(`informe_finanzas_${fecha.toISOString().slice(0, 10)}.pdf`);
+        return;
+      }
+
+      if (tipo === 'tablero-devoluciones') {
+        const filas = (_tableroDevoluciones || []).map((r) => [
+          safeText(r.reserva_id),
+          safeText(r.alojamiento),
+          safeText(r.anfitrion),
+          safeText(r.turista),
+          safeText(r.correo_turista),
+          safeText(r.pasarela_reembolso || r.pasarela_pago),
+          safeText(r.metodo_pago),
+          formatoMoneda(r.valor_pagado),
+          `${Number(r.porcentaje_devolucion || 0).toFixed(2)}%`,
+          formatoMoneda(r.valor_devolucion),
+          `${Number(r.porcentaje_descuento || 0).toFixed(2)}%`,
+          formatoMoneda(r.saldo_descuento),
+          safeText(r.referencia_pago),
+          safeText(r.referencia_reembolso)
+        ]);
+
+        const resumenAnfitrionesBase = Array.from((_tableroDevoluciones || []).reduce((acc, r) => {
+          const key = String(r.anfitrion || '-');
+          if (!acc.has(key)) {
+            acc.set(key, { anfitrion: key, transacciones: 0, pagado: 0, devuelto: 0, descontado: 0 });
+          }
+          const item = acc.get(key);
+          item.transacciones += 1;
+          item.pagado += Number(r.valor_pagado || 0);
+          item.devuelto += Number(r.valor_devolucion || 0);
+          item.descontado += Number(r.saldo_descuento || 0);
+          return acc;
+        }, new Map()).values());
+
+        const prioridadRiesgoPdf = (x) => {
+          const pctDesc = x.pagado > 0 ? ((x.descontado / x.pagado) * 100) : 0;
+          if (pctDesc >= 50) return 3;
+          if (pctDesc >= 30) return 2;
+          return 1;
+        };
+
+        const resumenAnfitriones = resumenAnfitrionesBase
+          .sort((a, b) => {
+            const riesgoB = prioridadRiesgoPdf(b);
+            const riesgoA = prioridadRiesgoPdf(a);
+            if (riesgoB !== riesgoA) return riesgoB - riesgoA;
+            return b.pagado - a.pagado;
+          })
+          .map((x) => [
+          safeText(x.anfitrion),
+          Number(x.transacciones || 0).toLocaleString('es-CO'),
+          formatoMoneda(x.pagado),
+          formatoMoneda(x.devuelto),
+          formatoMoneda(x.descontado),
+          `${(x.pagado > 0 ? ((x.devuelto / x.pagado) * 100) : 0).toFixed(2)}%`,
+          `${(x.pagado > 0 ? ((x.descontado / x.pagado) * 100) : 0).toFixed(2)}%`
+        ]);
+
+        const tot = _totalesTableroDevoluciones || {};
+        doc.setFontSize(9);
+        doc.text(
+          `Totales -> Pagado: ${formatoMoneda(tot.total_pagado_turistas || 0)} | Devuelto: ${formatoMoneda(tot.total_devuelto_turistas || 0)} (${Number(tot.porcentaje_devuelto_global || 0).toFixed(2)}%) | Descontado: ${formatoMoneda(tot.total_descuento_alojamientos || 0)} (${Number(tot.porcentaje_descuento_global || 0).toFixed(2)}%)`,
+          40,
+          y
+        );
+
+        doc.autoTable({
+          startY: y + 12,
+          head: [['ID Reserva', 'Alojamiento', 'Host', 'Turista', 'Correo', 'Pasarela', 'Método', 'Pagado', '% Dev.', 'Devuelto', '% Desc.', 'Descuento', 'Ref Pago', 'Ref Reembolso']],
+          body: filas,
+          styles: { fontSize: 7.5 },
+          headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+          theme: 'grid'
+        });
+
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 12,
+          head: [['Anfitrión', 'Transacciones', 'Total pagado', 'Total devuelto', 'Total descontado', '% Devuelto', '% Descontado']],
+          body: resumenAnfitriones,
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+          theme: 'grid'
+        });
+
+        doc.save(`informe_tablero_devoluciones_${fecha.toISOString().slice(0, 10)}.pdf`);
+        return;
+      }
+
+      const adminActualId = obtenerIdUsuarioDesdeToken();
+      const adminPlataforma = esAdminPlataformaLocal();
+      const filas = (window._usuariosCargados || []).filter((u) => {
+        const rol = String(u.rol || '').toLowerCase();
+        const esMismoUsuario = Number(u.id || 0) === adminActualId;
+        const esAdminPlataforma = rol === 'admin' && Number(u.es_superadmin || 0) === 1;
+        if (esMismoUsuario || (esAdminPlataforma && !adminPlataforma)) return false;
+        if (rol === 'admin' && !esAdminPlataforma && !adminPlataforma) return false;
+        if (fechaInicio && u.creado_en && new Date(u.creado_en) < new Date(fechaInicio)) return false;
+        if (fechaFin && u.creado_en) {
+          const fin = new Date(fechaFin); fin.setHours(23, 59, 59, 999);
+          if (new Date(u.creado_en) > fin) return false;
+        }
+        return true;
+      }).map((u) => {
+        const rol = String(u.rol || '').toLowerCase();
+        const alojamiento = rol === 'admin' ? (u.alojamiento_asignado || 'Sin alojamiento') : '-';
+        return [
+          safeText(u.id),
+          safeText(u.nombre),
+          safeText(u.correo),
+          safeText(u.rol),
+          alojamiento,
+          safeText(u.estado_cuenta || 'activo'),
+          formatearFecha(u.suspension_hasta),
+          formatearFecha(u.creado_en)
+        ];
+      });
+
+      doc.autoTable({
+        startY: y,
+        head: [['ID', 'Nombre', 'Correo', 'Rol', 'Alojamiento (admin)', 'Estado', 'Suspensión hasta', 'Creado en']],
+        body: filas,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [243, 247, 251], textColor: [30, 30, 30] },
+        theme: 'grid'
+      });
+
+      doc.save(`informe_usuarios_${fecha.toISOString().slice(0, 10)}.pdf`);
     }
 
     async function cargarTodo() {
@@ -314,8 +1213,39 @@
         cargarResumenDashboard(),
         cargarExtractosReservas(),
         cargarExtractosTransacciones(),
+        cargarAlojamientosFinanzas(),
+        cargarAnfitrionesTablero(),
+        cargarFinanzasReservas(),
+        cargarTableroDevoluciones(),
         cargarUsuarios()
       ]);
+    }
+
+    function iniciarAutoRefreshUsuarios() {
+      if (autoRefreshUsuarios) {
+        clearInterval(autoRefreshUsuarios);
+      }
+
+      autoRefreshUsuarios = setInterval(() => {
+        if (document.hidden) return;
+        Promise.all([cargarUsuarios(), cargarResumenDashboard(), cargarFinanzasReservas(), cargarTableroDevoluciones(), cargarExtractosReservas(), cargarExtractosTransacciones()]).catch(() => {});
+      }, 30000);
+    }
+
+    async function validarSesionAdmin() {
+      const token = localStorage.getItem('token');
+      const rol = String(localStorage.getItem('rol') || '').toLowerCase().trim();
+
+      if (!token || rol !== 'admin') {
+        return false;
+      }
+
+      try {
+        await fetchAdmin(`${API_BASE}/dashboard/resumen`);
+        return true;
+      } catch (_error) {
+        return false;
+      }
     }
 
     function activarMapaNavegacion() {
@@ -366,34 +1296,108 @@
       });
     }
 
-    // Verificación de sesión activa
-    window.addEventListener('DOMContentLoaded', async () => {
-      const token = localStorage.getItem('token');
-      const rol = localStorage.getItem('rol');
+    async function exigirSesionAdmin({ mostrarAlerta = false } = {}) {
+      const sesionAdminValida = await validarSesionAdmin();
+      if (sesionAdminValida) return true;
 
-      if (!token || rol !== 'admin') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('rol');
+
+      if (mostrarAlerta) {
         await Swal.fire({
           icon: 'warning',
           title: 'Acceso denegado',
           text: 'Inicia sesión como administrador.'
         });
-        window.location.href = '../index.html';
-        return;
       }
+
+      window.location.replace('../admin/admin.html');
+      return false;
+    }
+
+    // Verificación de sesión activa
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('btnCerrarSesionAdmin')?.addEventListener('click', cerrarSesion);
+      document.querySelector('[data-admin-action="buscar-devengados"]')?.addEventListener('input', renderizarDevengadosPorAlojamiento);
+      document.getElementById('filtro-tablero-anfitrion')?.addEventListener('change', () => {
+        cargarTableroDevoluciones().catch(console.error);
+      });
+      document.getElementById('filtro-tablero-pasarela')?.addEventListener('change', () => {
+        cargarTableroDevoluciones().catch(console.error);
+      });
+      document.getElementById('filtro-tablero-metodo')?.addEventListener('change', () => {
+        cargarTableroDevoluciones().catch(console.error);
+      });
+
+      document.addEventListener('click', (event) => {
+        const accion = event.target.closest('[data-admin-action]');
+        if (accion) {
+          const tipo = accion.dataset.adminAction;
+          if (tipo === 'cargar-extractos-reservas') cargarExtractosReservas().catch(console.error);
+          if (tipo === 'cargar-extractos-transacciones') cargarExtractosTransacciones().catch(console.error);
+          if (tipo === 'cargar-finanzas') Promise.all([cargarFinanzasReservas(), cargarTableroDevoluciones()]).catch(console.error);
+          if (tipo === 'cargar-tablero-devoluciones') cargarTableroDevoluciones().catch(console.error);
+          if (tipo === 'cargar-usuarios') cargarUsuarios().catch(console.error);
+          if (tipo === 'descargar-pdf') descargarInformePDF(accion.dataset.pdfTipo || 'usuarios');
+          return;
+        }
+
+        const accionUsuario = event.target.closest('[data-admin-user-action]');
+        if (!accionUsuario || accionUsuario.disabled) return;
+
+        const userId = Number(accionUsuario.dataset.adminUserId || 0);
+        if (!Number.isFinite(userId) || userId <= 0) return;
+
+        const userAction = accionUsuario.dataset.adminUserAction;
+        if (userAction === 'activar') activarUsuario(userId).catch(console.error);
+        if (userAction === 'suspender') suspenderUsuario(userId).catch(console.error);
+        if (userAction === 'eliminar') eliminarUsuario(userId).catch(console.error);
+      });
+
+      const puedeContinuar = await exigirSesionAdmin({ mostrarAlerta: true });
+      if (!puedeContinuar) return;
 
       try {
         await cargarTodo();
         activarMapaNavegacion();
+        iniciarAutoRefreshUsuarios();
       } catch (error) {
-        await Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'No se pudo cargar el panel de administración.' });
+        localStorage.removeItem('token');
+        localStorage.removeItem('rol');
+        await Swal.fire({ icon: 'error', title: 'Sesión inválida', text: error.message || 'No se pudo validar la sesión de administrador.' });
+        window.location.replace('../admin/admin.html');
       }
     });
 
-    function cerrarSesion() {
+    // Revalida sesión al volver con botón atrás/adelante o restauración desde caché.
+    window.addEventListener('pageshow', async () => {
+      if (!tieneSesionAdminLocal()) {
+        window.location.replace('../admin/admin.html');
+        return;
+      }
+
+      await exigirSesionAdmin({ mostrarAlerta: false });
+    });
+
+    async function cerrarSesion(event) {
+      if (event) event.preventDefault();
+      if (autoRefreshUsuarios) clearInterval(autoRefreshUsuarios);
       localStorage.removeItem('token');
       localStorage.removeItem('rol');
-      window.location.href = '../index.html';
+      localStorage.removeItem('es_superadmin');
+      localStorage.removeItem('panel_destino');
+      sessionStorage.clear();
+      window.location.replace('../login/login.html');
     }
   </script>
+  <button class="tr-chatbot-launcher" type="button" aria-label="Abrir asistente Tu Refugio">💬</button>
+  <script src="/js/panel-chat.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

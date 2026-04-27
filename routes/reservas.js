@@ -105,6 +105,87 @@ async function obtenerOcrearVisitante({ nombre, correo, telefono, tipoDocumento,
   });
 }
 
+function generarCodigoConfirmacionReserva() {
+  const prefijo = Math.floor(100000 + Math.random() * 900000);
+  const sufijo = crypto.randomBytes(3).toString('hex').toUpperCase();
+  return `RV-${prefijo}-${sufijo}`;
+}
+
+function registrarCodigoConfirmacionReserva({
+  reservaId,
+  correoTurista,
+  nombreTurista,
+  alojamientoNombre,
+  habitacionNombre,
+  fechaEntrada,
+  fechaSalida
+}) {
+  return new Promise((resolve) => {
+    if (!reservaId || !correoTurista) {
+      return resolve(null);
+    }
+
+    const correo = String(correoTurista || '').trim().toLowerCase();
+    if (!correo) return resolve(null);
+
+    const intentarInsert = (intento = 0) => {
+      if (intento >= 5) {
+        console.error('[codigo-reserva] No se pudo generar un código único tras varios intentos.');
+        return resolve(null);
+      }
+
+      const codigo = generarCodigoConfirmacionReserva();
+      db.run(
+        `INSERT INTO reserva_codigos_confirmacion (reserva_id, codigo, estado)
+         VALUES (?, ?, 'activo')`,
+        [reservaId, codigo],
+        (insertErr) => {
+          if (insertErr) {
+            const dup = String(insertErr.message || '').toLowerCase().includes('unique');
+            if (dup) return intentarInsert(intento + 1);
+            console.error('[codigo-reserva] Error guardando código:', insertErr.message || insertErr);
+            return resolve(null);
+          }
+
+          const nombre = String(nombreTurista || 'Turista').trim();
+          const msg = [
+            `Hola ${nombre},`,
+            '',
+            'Tu reserva fue registrada en Tu Refugio.',
+            `Código único de confirmación: ${codigo}`,
+            '',
+            'Este código es de un solo uso.',
+            `Alojamiento: ${alojamientoNombre || '-'}`,
+            `Habitación: ${habitacionNombre || '-'}`,
+            `Fechas: ${fechaEntrada || '-'} a ${fechaSalida || '-'}`,
+            '',
+            'Por seguridad, este código se desactiva automáticamente si la reserva es cancelada.'
+          ].join('\n');
+
+          db.run(
+            `INSERT INTO notificaciones (id_reserva, canal, destinatario, mensaje, estado, payload_json)
+             VALUES (?, 'email', ?, ?, 'pendiente_integracion', ?)`,
+            [
+              reservaId,
+              correo,
+              msg,
+              JSON.stringify({ subject: 'Tu Refugio - Código único de confirmación de reserva' })
+            ],
+            (notifyErr) => {
+              if (notifyErr) {
+                console.error('[codigo-reserva] Error encolando email:', notifyErr.message || notifyErr);
+              }
+              resolve({ codigo });
+            }
+          );
+        }
+      );
+    };
+
+    intentarInsert(0);
+  });
+}
+
 
 // ======================================================
 // CREAR RESERVA
@@ -130,6 +211,9 @@ router.post('/', verificarToken, (req, res) => {
   // Verificar habitación
   db.get(
     `SELECT h.precio,
+            h.estado_manual,
+            h.mantenimiento_hasta,
+            h.limpieza_hasta,
             COALESCE(ua.estado_cuenta, 'activo') AS estado_anfitrion,
             ua.suspension_hasta AS suspension_anfitrion_hasta
      FROM habitaciones h
@@ -148,6 +232,26 @@ router.post('/', verificarToken, (req, res) => {
       if (suspensionVigente) {
         return res.status(403).json({
           error: 'Este alojamiento está temporalmente suspendido por el administrador y no admite reservas.'
+        });
+      }
+
+      const enMantenimiento = String(habitacion.estado_manual || 'disponible').toLowerCase() === 'mantenimiento';
+      const mantenimientoHasta = habitacion.mantenimiento_hasta ? new Date(habitacion.mantenimiento_hasta) : null;
+      const mantenimientoVigente = enMantenimiento && (!mantenimientoHasta || mantenimientoHasta > new Date());
+      if (mantenimientoVigente) {
+        return res.status(409).json({
+          error: 'La habitación está en mantenimiento y no se puede reservar por ahora.',
+          proxima_disponibilidad: habitacion.mantenimiento_hasta || null
+        });
+      }
+
+      const enLimpieza = String(habitacion.estado_manual || 'disponible').toLowerCase() === 'limpieza';
+      const limpiezaHasta = habitacion.limpieza_hasta ? new Date(habitacion.limpieza_hasta) : null;
+      const limpiezaVigente = enLimpieza && (!limpiezaHasta || limpiezaHasta > new Date());
+      if (limpiezaVigente) {
+        return res.status(409).json({
+          error: 'La habitación está en limpieza y no se puede reservar por ahora.',
+          proxima_disponibilidad: habitacion.limpieza_hasta || null
         });
       }
 
@@ -178,10 +282,20 @@ router.post('/', verificarToken, (req, res) => {
 
               if (err) return res.status(500).json({ error: 'No se pudo crear la reserva.' });
 
+              const reservaId = this.lastID;
+              db.run(
+                `INSERT OR IGNORE INTO favoritos_alojamientos (id_usuario, id_alojamiento)
+                 SELECT ?, h.id_alojamiento
+                 FROM habitaciones h
+                 WHERE h.id = ?`,
+                [id_usuario, id_habitacion],
+                () => {}
+              );
+
               res.status(201).json({
                 mensaje: 'Reserva creada correctamente.',
                 reserva: {
-                  id: this.lastID,
+                  id: reservaId,
                   id_usuario,
                   id_habitacion,
                   fecha_entrada,
@@ -321,7 +435,8 @@ router.post('/checkout-public', async (req, res) => {
     };
 
     db.get(
-      `SELECT h.id, h.nombre, h.capacidad, h.precio, h.id_alojamiento, a.titulo,
+            `SELECT h.id, h.nombre, h.capacidad, h.precio, h.id_alojamiento, a.titulo,
+              h.estado_manual, h.mantenimiento_hasta, h.limpieza_hasta,
               COALESCE(ua.estado_cuenta, 'activo') AS estado_anfitrion,
               ua.suspension_hasta AS suspension_anfitrion_hasta
       FROM habitaciones h
@@ -348,8 +463,24 @@ router.post('/checkout-public', async (req, res) => {
           });
         }
 
-        if (String(habitacion.estado_manual || 'disponible').toLowerCase() === 'mantenimiento') {
-          return res.status(409).json({ error: 'La habitación no está disponible temporalmente (mantenimiento).' });
+        const enMantenimiento = String(habitacion.estado_manual || 'disponible').toLowerCase() === 'mantenimiento';
+        const mantenimientoHasta = habitacion.mantenimiento_hasta ? new Date(habitacion.mantenimiento_hasta) : null;
+        const mantenimientoVigente = enMantenimiento && (!mantenimientoHasta || mantenimientoHasta > new Date());
+        if (mantenimientoVigente) {
+          return res.status(409).json({
+            error: 'La habitación no está disponible temporalmente (mantenimiento).',
+            proxima_disponibilidad: habitacion.mantenimiento_hasta || null
+          });
+        }
+
+        const enLimpieza = String(habitacion.estado_manual || 'disponible').toLowerCase() === 'limpieza';
+        const limpiezaHasta = habitacion.limpieza_hasta ? new Date(habitacion.limpieza_hasta) : null;
+        const limpiezaVigente = enLimpieza && (!limpiezaHasta || limpiezaHasta > new Date());
+        if (limpiezaVigente) {
+          return res.status(409).json({
+            error: 'La habitación no está disponible temporalmente (limpieza).',
+            proxima_disponibilidad: habitacion.limpieza_hasta || null
+          });
         }
 
         if (cantidadPersonas > Number(habitacion.capacidad || 0)) {
@@ -519,6 +650,13 @@ router.post('/checkout-public', async (req, res) => {
                       const reservaId = this.lastID;
 
                       db.run(
+                        `INSERT OR IGNORE INTO favoritos_alojamientos (id_usuario, id_alojamiento)
+                         VALUES (?, ?)`,
+                        [usuarioReserva.id, habitacion.id_alojamiento],
+                        () => {}
+                      );
+
+                      db.run(
                         `INSERT INTO pagos (
                           id_reserva, monto, metodo_pago, estado, referencia_pago, pasarela
                         ) VALUES (?, ?, ?, 'pendiente', ?, 'wompi')`,
@@ -547,18 +685,32 @@ router.post('/checkout-public', async (req, res) => {
                             }
                           }
 
-                          return responderCheckout({
+                          registrarCodigoConfirmacionReserva({
                             reservaId,
-                            referenciaPago,
-                            subtotalHospedaje,
-                            subtotalServicios,
-                            total: precioTotal,
-                            nochesReserva: noches,
+                            correoTurista: titularCorreo,
+                            nombreTurista: titularNombre,
                             alojamientoNombre: habitacion.titulo,
                             habitacionNombre: habitacion.nombre,
-                            statusCode: 201,
-                            mensaje: 'Reserva preparada. Continúa con el pago.'
-                          });
+                            fechaEntrada: fecha_entrada,
+                            fechaSalida: fecha_salida
+                          })
+                            .catch((errCodigo) => {
+                              console.error('[codigo-reserva] Error general:', errCodigo?.message || errCodigo);
+                            })
+                            .finally(() => {
+                              responderCheckout({
+                                reservaId,
+                                referenciaPago,
+                                subtotalHospedaje,
+                                subtotalServicios,
+                                total: precioTotal,
+                                nochesReserva: noches,
+                                alojamientoNombre: habitacion.titulo,
+                                habitacionNombre: habitacion.nombre,
+                                statusCode: 201,
+                                mensaje: 'Reserva preparada. Continúa con el pago.'
+                              });
+                            });
                         }
                       );
                     }
@@ -600,10 +752,70 @@ router.post('/checkout-public', async (req, res) => {
 router.get('/mis-reservas', verificarToken, (req, res) => {
 
   db.all(
-    `SELECT r.*, h.nombre AS habitacion
+    `SELECT
+        r.id,
+        r.id_usuario,
+        r.id_habitacion,
+        r.fecha_entrada,
+        r.fecha_salida,
+        r.estado,
+        r.referencia_pago,
+        r.cancelacion_motivo,
+        r.cancelacion_porcentaje_reembolso,
+        r.precio_total,
+        r.subtotal_hospedaje,
+        r.subtotal_servicios,
+        r.noches,
+        r.creado_en,
+        COALESCE(NULLIF(TRIM(h.nombre), ''), 'N/A') AS habitacion,
+        COALESCE(NULLIF(TRIM(h.nombre), ''), 'N/A') AS habitacion_nombre,
+        COALESCE(NULLIF(TRIM(a.titulo), ''), 'N/A') AS alojamiento,
+        COALESCE(NULLIF(TRIM(a.titulo), ''), 'N/A') AS alojamiento_nombre,
+        CASE
+          WHEN LOWER(TRIM(COALESCE(r.estado, ''))) = 'cancelada'
+            AND EXISTS (
+              SELECT 1
+              FROM pagos pr
+              WHERE pr.id_reserva = r.id
+                AND COALESCE(pr.monto, 0) < 0
+                AND LOWER(TRIM(COALESCE(pr.estado, ''))) IN ('pagado', 'aprobado')
+            ) THEN 'reembolsado'
+          WHEN LOWER(TRIM(COALESCE((
+            SELECT p2.estado
+            FROM pagos p2
+            WHERE p2.id_reserva = r.id
+            ORDER BY p2.id DESC
+            LIMIT 1
+          ), ''))) IN ('pagado', 'aprobado') THEN 'pago'
+          WHEN LOWER(TRIM(COALESCE((
+            SELECT p2.estado
+            FROM pagos p2
+            WHERE p2.id_reserva = r.id
+            ORDER BY p2.id DESC
+            LIMIT 1
+          ), ''))) = 'rechazado' THEN 'rechazado'
+          WHEN LOWER(TRIM(COALESCE((
+            SELECT p2.estado
+            FROM pagos p2
+            WHERE p2.id_reserva = r.id
+            ORDER BY p2.id DESC
+            LIMIT 1
+          ), ''))) = 'cancelado' THEN 'cancelado'
+          ELSE 'pendiente'
+        END AS estado_pago,
+        COALESCE(r.subtotal_hospedaje, r.precio_total, 0) AS valor_hospedaje,
+        COALESCE(r.subtotal_servicios, 0) AS valor_servicios,
+        CASE
+          WHEN r.subtotal_hospedaje IS NOT NULL AND r.subtotal_servicios IS NOT NULL
+            THEN MAX((r.subtotal_hospedaje + r.subtotal_servicios) - COALESCE(r.precio_total, 0), 0)
+          ELSE 0
+        END AS descuento,
+        COALESCE(r.precio_total, r.subtotal_hospedaje, 0) AS total
      FROM reservas r
-     JOIN habitaciones h ON r.id_habitacion = h.id
-     WHERE r.id_usuario = ?`,
+     LEFT JOIN habitaciones h ON r.id_habitacion = h.id
+     LEFT JOIN alojamientos a ON h.id_alojamiento = a.id
+     WHERE r.id_usuario = ?
+     ORDER BY r.id DESC`,
     [req.user.id],
     (err, rows) => {
 
@@ -1005,6 +1217,142 @@ router.post('/por-email', (req, res) => {
       );
     }
   );
+});
+
+router.post('/codigo-confirmacion/verificar', verificarToken, (req, res) => {
+  const codigo = String(req.body?.codigo || '').trim().toUpperCase();
+  if (!codigo) {
+    return res.status(400).json({ status: 'error', mensaje: 'Debes ingresar el código de confirmación.' });
+  }
+
+  const sql = `
+    SELECT
+      c.id AS codigo_id,
+      c.codigo,
+      c.estado AS estado_codigo,
+      c.creado_en AS codigo_creado_en,
+      r.id AS reserva_id,
+      r.estado AS estado_reserva,
+      r.fecha_entrada,
+      r.fecha_salida,
+      r.precio_total,
+      r.noches,
+      r.personas,
+      r.subtotal_hospedaje,
+      r.subtotal_servicios,
+      r.detalle_servicios_json,
+      r.titular_nombre,
+      r.titular_correo,
+      r.titular_telefono,
+      r.titular_documento_tipo,
+      r.titular_documento_numero,
+      h.id AS habitacion_id,
+      h.nombre AS habitacion_nombre,
+      a.id AS alojamiento_id,
+      a.titulo AS alojamiento_titulo,
+      a.id_anfitrion
+    FROM reserva_codigos_confirmacion c
+    JOIN reservas r ON r.id = c.reserva_id
+    JOIN habitaciones h ON h.id = r.id_habitacion
+    JOIN alojamientos a ON a.id = h.id_alojamiento
+    WHERE UPPER(TRIM(c.codigo)) = ?
+    ORDER BY c.id DESC
+    LIMIT 1
+  `;
+
+  db.get(sql, [codigo], (err, row) => {
+    if (err) {
+      console.error('[codigo-reserva] Error consultando código:', err);
+      return res.status(500).json({ status: 'error', mensaje: 'Error validando el código de confirmación.' });
+    }
+
+    if (!row) {
+      return res.status(404).json({ status: 'error', mensaje: 'Código no encontrado.' });
+    }
+
+    if (req.user.rol !== 'admin' && Number(row.id_anfitrion) !== Number(req.user.id)) {
+      return res.status(403).json({ status: 'error', mensaje: 'No tienes permiso para consultar este código.' });
+    }
+
+    if (String(row.estado_reserva || '').toLowerCase() === 'cancelada') {
+      db.run(
+        `UPDATE reserva_codigos_confirmacion
+         SET estado = 'cancelado', cancelado_en = COALESCE(cancelado_en, datetime('now', 'localtime'))
+         WHERE id = ? AND estado = 'activo'`,
+        [row.codigo_id],
+        () => {}
+      );
+      return res.status(409).json({ status: 'error', mensaje: 'El código fue dado de baja porque la reserva está cancelada.' });
+    }
+
+    const estadoCodigo = String(row.estado_codigo || '').toLowerCase();
+    if (estadoCodigo !== 'activo') {
+      const msg = estadoCodigo === 'usado'
+        ? 'Este código ya fue usado y está quemado.'
+        : 'Este código no está disponible.';
+      return res.status(409).json({ status: 'error', mensaje: msg });
+    }
+
+    db.run(
+      `UPDATE reserva_codigos_confirmacion
+       SET estado = 'usado', usado_en = datetime('now', 'localtime')
+       WHERE id = ? AND estado = 'activo'`,
+      [row.codigo_id],
+      function(updateErr) {
+        if (updateErr) {
+          console.error('[codigo-reserva] Error quemando código:', updateErr);
+          return res.status(500).json({ status: 'error', mensaje: 'No se pudo completar la validación del código.' });
+        }
+
+        if (!this.changes) {
+          return res.status(409).json({ status: 'error', mensaje: 'Este código ya no está disponible.' });
+        }
+
+        let servicios = [];
+        try {
+          const raw = JSON.parse(row.detalle_servicios_json || '[]');
+          servicios = Array.isArray(raw) ? raw : [];
+        } catch (_) {
+          servicios = [];
+        }
+
+        return res.status(200).json({
+          status: 'success',
+          mensaje: 'Código validado correctamente. Información cargada.',
+          detalle: {
+            codigo: row.codigo,
+            reserva: {
+              id: row.reserva_id,
+              estado: row.estado_reserva,
+              fecha_entrada: row.fecha_entrada,
+              fecha_salida: row.fecha_salida,
+              noches: Number(row.noches || 0),
+              personas: Number(row.personas || 0),
+              precio_total: Number(row.precio_total || 0),
+              subtotal_hospedaje: Number(row.subtotal_hospedaje || 0),
+              subtotal_servicios: Number(row.subtotal_servicios || 0)
+            },
+            turista: {
+              nombre: row.titular_nombre,
+              correo: row.titular_correo,
+              telefono: row.titular_telefono,
+              documento_tipo: row.titular_documento_tipo,
+              documento_numero: row.titular_documento_numero
+            },
+            alojamiento: {
+              id: row.alojamiento_id,
+              titulo: row.alojamiento_titulo
+            },
+            habitacion: {
+              id: row.habitacion_id,
+              nombre: row.habitacion_nombre
+            },
+            servicios
+          }
+        });
+      }
+    );
+  });
 });
 
 module.exports = router;

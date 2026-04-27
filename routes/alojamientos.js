@@ -8,16 +8,32 @@ const { verificarToken, soloRoles } = require('../middlewares/auth.middleware');
 // ======================================
 // CONFIGURAR MULTER
 // ======================================
+const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const EXTENSION_IMAGEN = /\.(jpe?g|png|webp|gif)$/i;
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'public/uploads'); // carpeta donde se guardan
+    cb(null, 'public/uploads');
   },
   filename: (req, file, cb) => {
-    const nombre = Date.now() + path.extname(file.originalname);
-    cb(null, nombre);
+    // Nombre seguro: timestamp + extensión permitida (sin usar el nombre original)
+    const ext = EXTENSION_IMAGEN.test(file.originalname)
+      ? path.extname(file.originalname).toLowerCase()
+      : '.jpg';
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
   }
 });
-const upload = multer({ storage });
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    if (!TIPOS_IMAGEN_PERMITIDOS.includes(file.mimetype) || !EXTENSION_IMAGEN.test(file.originalname)) {
+      return cb(new Error('Solo se permiten imágenes JPG, PNG, WebP o GIF.'));
+    }
+    cb(null, true);
+  }
+});
 
 function verificarPropietarioAlojamientoPorIdParam(paramName = 'id') {
   return (req, res, next) => {
@@ -78,6 +94,7 @@ router.get('/imagenes/principales', (req, res) => {
       a.titulo,
       i.ruta
     FROM alojamientos a
+    JOIN usuarios u ON a.id_anfitrion = u.id
     LEFT JOIN imagenes i ON i.id = (
         SELECT id
         FROM imagenes
@@ -86,6 +103,13 @@ router.get('/imagenes/principales', (req, res) => {
         LIMIT 1
     )
     WHERE i.ruta IS NOT NULL
+      AND NOT (
+        COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+        AND (
+          u.suspension_hasta IS NULL
+          OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+        )
+      )
     ORDER BY a.id DESC
   `;
 
@@ -233,7 +257,14 @@ router.get('/', (req, res) => {
        FROM habitaciones h
        LEFT JOIN reservas r ON r.id_habitacion = h.id
        GROUP BY h.id_alojamiento
-     ) stats ON stats.id_alojamiento = a.id`,
+     ) stats ON stats.id_alojamiento = a.id
+     WHERE NOT (
+       COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+       AND (
+         u.suspension_hasta IS NULL
+         OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+       )
+     )`,
     [],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'Error obteniendo alojamientos.' });
@@ -259,9 +290,17 @@ router.get('/top/reservas-diarias', (req, res) => {
         LIMIT 1
       ) AS imagen_principal
      FROM alojamientos a
+     JOIN usuarios u ON u.id = a.id_anfitrion
      JOIN habitaciones h ON h.id_alojamiento = a.id
      JOIN reservas r ON r.id_habitacion = h.id
      WHERE date(r.creado_en) = date('now')
+       AND NOT (
+         COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+         AND (
+           u.suspension_hasta IS NULL
+           OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+         )
+       )
      GROUP BY a.id
      ORDER BY reservas_hoy DESC, a.id DESC
      LIMIT 20`,
@@ -283,6 +322,13 @@ router.get('/buscar', (req, res) => {
     FROM alojamientos a
     JOIN usuarios u ON a.id_anfitrion = u.id
     WHERE 1=1
+      AND NOT (
+        COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+        AND (
+          u.suspension_hasta IS NULL
+          OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+        )
+      )
   `;
   let params = [];
 
@@ -313,7 +359,7 @@ router.get('/mis-favoritos', verificarToken, (req, res) => {
   const turista_id = req.user.id;
 
   const sql = `
-    SELECT DISTINCT
+    SELECT
       a.id,
       a.titulo,
       a.descripcion,
@@ -327,20 +373,25 @@ router.get('/mis-favoritos', verificarToken, (req, res) => {
         ORDER BY i.principal DESC, i.id ASC
         LIMIT 1
       ) AS imagen_principal,
-      MAX(r.creado_en) AS ultima_reserva,
+      fa.creado_en AS fecha_favorito,
       COUNT(DISTINCT r.id) as reservas_totales,
       AVG(re.calificacion) as calificacion_promedio
-    FROM alojamientos a
+    FROM favoritos_alojamientos fa
+    JOIN alojamientos a ON a.id = fa.id_alojamiento
+    JOIN usuarios uo ON uo.id = a.id_anfitrion
     LEFT JOIN habitaciones h ON a.id = h.id_alojamiento
-    LEFT JOIN reservas r ON h.id = r.id_habitacion AND r.id_usuario = ? AND r.estado IN ('confirmada', 'finalizada')
+    LEFT JOIN reservas r ON h.id = r.id_habitacion AND r.id_usuario = ?
     LEFT JOIN reseñas re ON a.id = re.id_alojamiento
-    WHERE EXISTS (
-      SELECT 1 FROM habitaciones hh
-      JOIN reservas rr ON hh.id = rr.id_habitacion
-      WHERE hh.id_alojamiento = a.id AND rr.id_usuario = ? AND rr.estado IN ('confirmada', 'finalizada')
+    WHERE fa.id_usuario = ?
+      AND NOT (
+      COALESCE(uo.estado_cuenta, 'activo') = 'suspendido'
+      AND (
+        uo.suspension_hasta IS NULL
+        OR datetime(uo.suspension_hasta) > datetime('now', 'localtime')
+      )
     )
-    GROUP BY a.id
-    ORDER BY datetime(ultima_reserva) DESC, a.titulo ASC
+    GROUP BY a.id, fa.creado_en
+    ORDER BY datetime(fa.creado_en) DESC, a.titulo ASC
   `;
 
   db.all(sql, [turista_id, turista_id], (err, alojamientos) => {
@@ -360,6 +411,68 @@ router.get('/mis-favoritos', verificarToken, (req, res) => {
   });
 });
 
+/**
+ * POST /api/alojamientos/:id/favorito
+ * Agregar alojamiento a favoritos del turista (idempotente)
+ */
+router.post('/:id/favorito', verificarToken, (req, res) => {
+  const turistaId = req.user.id;
+  const alojamientoId = Number(req.params.id);
+
+  if (!Number.isFinite(alojamientoId) || alojamientoId <= 0) {
+    return res.status(400).json({ status: 'error', mensaje: 'ID de alojamiento inválido.' });
+  }
+
+  db.get('SELECT id FROM alojamientos WHERE id = ?', [alojamientoId], (findErr, alojamiento) => {
+    if (findErr) {
+      return res.status(500).json({ status: 'error', mensaje: 'Error validando alojamiento.' });
+    }
+    if (!alojamiento) {
+      return res.status(404).json({ status: 'error', mensaje: 'Alojamiento no encontrado.' });
+    }
+
+    db.run(
+      'INSERT OR IGNORE INTO favoritos_alojamientos (id_usuario, id_alojamiento) VALUES (?, ?)',
+      [turistaId, alojamientoId],
+      (insertErr) => {
+        if (insertErr) {
+          return res.status(500).json({ status: 'error', mensaje: 'No se pudo guardar favorito.' });
+        }
+        return res.status(200).json({ status: 'success', mensaje: 'Alojamiento guardado en favoritos.' });
+      }
+    );
+  });
+});
+
+/**
+ * DELETE /api/alojamientos/:id/favorito
+ * Quitar alojamiento de favoritos del turista
+ */
+router.delete('/:id/favorito', verificarToken, (req, res) => {
+  const turistaId = req.user.id;
+  const alojamientoId = Number(req.params.id);
+
+  if (!Number.isFinite(alojamientoId) || alojamientoId <= 0) {
+    return res.status(400).json({ status: 'error', mensaje: 'ID de alojamiento inválido.' });
+  }
+
+  db.run(
+    'DELETE FROM favoritos_alojamientos WHERE id_usuario = ? AND id_alojamiento = ?',
+    [turistaId, alojamientoId],
+    function(deleteErr) {
+      if (deleteErr) {
+        return res.status(500).json({ status: 'error', mensaje: 'No se pudo quitar de favoritos.' });
+      }
+      return res.status(200).json({
+        status: 'success',
+        mensaje: this.changes > 0
+          ? 'Alojamiento eliminado de favoritos.'
+          : 'El alojamiento ya no estaba en favoritos.'
+      });
+    }
+  );
+});
+
 // ======================================================
 // OBTENER ALOJAMIENTO POR ID
 // ======================================================
@@ -370,12 +483,23 @@ router.get('/:id', (req, res) => {
     `SELECT a.*, u.nombre AS anfitrion
      FROM alojamientos a
      JOIN usuarios u ON a.id_anfitrion = u.id
-     WHERE a.id = ?`,
+     WHERE a.id = ?
+       AND NOT (
+         COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+         AND (
+           u.suspension_hasta IS NULL
+           OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+         )
+       )`,
     [id],
     (err, row) => {
       if (err) return res.status(500).json({ error: 'Error obteniendo alojamiento.' });
       if (!row) return res.status(404).json({ error: 'Alojamiento no encontrado.' });
-      res.status(200).json(row);
+      res.status(200).json({
+        ...row,
+        // Alias explícito para clientes que esperan semántica "por noche".
+        precio_por_noche: row.precio
+      });
     }
   );
 });

@@ -9,8 +9,16 @@ let debounceTimer = null;
 function setEstado(msg, ok = false) {
   const el = document.getElementById("estadoValidacion");
   if (!el) return;
-  el.textContent = msg;
-  el.style.color = ok ? "#4caf50" : "#f44336";
+
+  const texto = String(msg || "").trim();
+  el.textContent = texto;
+
+  if (!texto) {
+    el.className = "estado-card";
+    return;
+  }
+
+  el.className = `estado-card ${ok ? "estado-ok" : "estado-error"}`;
 }
 
 function actualizarEstadoBotonEnviar() {
@@ -55,7 +63,7 @@ async function validarAccesoResenaPorCorreo() {
     accesoValidado = true;
     reservaValidadaId = data?.reserva?.id || null;
     idAlojamientoDetectado = Number(data?.reserva?.id_alojamiento || 0);
-    actualizarReservaDetectada(`Alojamiento detectado: ${data?.reserva?.alojamiento || "N/D"} (ID ${idAlojamientoDetectado}) | Habitación: ${data?.reserva?.habitacion || "N/D"}`);
+    actualizarReservaDetectada(`Alojamiento detectado: ${data?.reserva?.alojamiento || "N/D"}  | Habitación: ${data?.reserva?.habitacion || "N/D"}`);
     setEstado("Acceso habilitado. Ya puedes enviar tu reseña.", true);
     actualizarEstadoBotonEnviar();
   } catch (error) {

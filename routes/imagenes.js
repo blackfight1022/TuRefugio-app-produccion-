@@ -92,7 +92,18 @@ router.post('/alojamientos/:id/imagenes', verificarToken, upload.array('imagenes
 // ===============================
 router.get('/alojamientos/:id/imagenes', (req, res) => {
   db.all(
-    "SELECT * FROM imagenes WHERE id_alojamiento = ?",
+    `SELECT i.*
+     FROM imagenes i
+     JOIN alojamientos a ON a.id = i.id_alojamiento
+     JOIN usuarios u ON u.id = a.id_anfitrion
+     WHERE i.id_alojamiento = ?
+       AND NOT (
+         COALESCE(u.estado_cuenta, 'activo') = 'suspendido'
+         AND (
+           u.suspension_hasta IS NULL
+           OR datetime(u.suspension_hasta) > datetime('now', 'localtime')
+         )
+       )`,
     [req.params.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'Error al obtener imágenes' });

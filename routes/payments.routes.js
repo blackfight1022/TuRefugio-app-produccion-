@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const db = require('../database');
 const { verificarToken } = require('../middlewares/auth.middleware');
 const { procesarNotificacionesPendientes } = require('../services/notificaciones.service');
@@ -294,9 +295,43 @@ router.post(
 
 
 // ==========================================
+// VERIFICACIÓN DE FIRMA WOMPI (HMAC-SHA256)
+// ==========================================
+function obtenerValorAnidado(obj, ruta) {
+  return ruta.split('.').reduce((acc, clave) => (acc != null ? acc[clave] : undefined), obj);
+}
+
+function verificarFirmaWompi(body) {
+  const eventsSecret = String(process.env.WOMPI_EVENTS_KEY || '').trim();
+  const propiedades = body?.signature?.properties;
+  const checksum = body?.signature?.checksum;
+  const timestamp = body?.timestamp;
+
+  if (!eventsSecret || !Array.isArray(propiedades) || !checksum || !timestamp) {
+    return false;
+  }
+
+  const concatenado = propiedades
+    .map((prop) => String(obtenerValorAnidado(body, prop) ?? ''))
+    .join('') + String(timestamp) + eventsSecret;
+
+  const calculado = crypto.createHash('sha256').update(concatenado, 'utf8').digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(calculado, 'hex'), Buffer.from(checksum, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+// ==========================================
 // WEBHOOK DE Wompi PARA CAMBIO DE ESTADO
 // ==========================================
 router.post('/wompi/webhook', (req, res) => {
+  if (!verificarFirmaWompi(req.body)) {
+    return res.status(401).json({ error: 'Firma del evento inválida.' });
+  }
+
   const transaction = req.body?.data?.transaction || req.body?.transaction || null;
 
   if (!transaction?.reference) {

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const SECRET = 'clave_super_segura';
+const SECRET = process.env.JWT_SECRET || '¡Configura JWT_SECRET en tu .env!';
+// ADVERTENCIA: Este archivo es legacy y no se usa en producción.
 
 function verificarToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];

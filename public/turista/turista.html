@@ -3,10 +3,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Perfil del Turista - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Perfil del Turista - Tu Refugio</title>
   <link rel="stylesheet" href="turista.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/global.css" />
 </head>
 <body>
   <header>
@@ -27,12 +31,12 @@
         </li>
         <li><a href="#">Mi Cuenta</a>
           <ul>
-            <li><a href="#" onclick="mostrarPanel('bienvenida')">Panel Principal</a></li>
-            <li><a href="#" onclick="mostrarPanel('perfil')">Perfil</a></li>
-            <li><a href="#" onclick="mostrarPanel('historial')">Historial de Reservas</a></li>
-            <li><a href="#" onclick="mostrarPanel('gestion-reservas')">Gestionar Reservas</a></li>
-            <li><a href="#" onclick="mostrarPanel('mensajeria')">Mensajería</a></li>
-            <li><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+            <li><a href="#" data-panel-destino="bienvenida">Panel Principal</a></li>
+            <li><a href="#" data-panel-destino="perfil">Perfil</a></li>
+            <li><a href="#" data-panel-destino="historial">Historial de Reservas</a></li>
+            <li><a href="#" data-panel-destino="gestion-reservas">Gestionar Reservas</a></li>
+            <li><a href="#" data-panel-destino="mensajeria">Mensajería</a></li>
+            <li><a href="#" id="btnCerrarSesionTurista">Cerrar Sesión</a></li>
           </ul>
         </li>
       </ul>
@@ -60,14 +64,14 @@
         <div class="perfil-datos" id="perfil-datos">
           <!-- Se cargará dinámicamente -->
         </div>
-        <button onclick="editarPerfil()" class="btn-primario">✏️ Editar Perfil</button>
+        <button id="btnEditarPerfil" type="button" class="btn-primario">✏️ Editar Perfil</button>
       </div>
 
       <!-- Cuadrante cambio de contraseña -->
       <div class="card-cambiar-contrasena">
         <h3 class="card-contrasena-titulo">🔒 Cambiar Contraseña <span class="badge-opcional">Opcional</span></h3>
         <p class="card-contrasena-desc">Si deseas actualizar tu contraseña de acceso, completa los campos a continuación.</p>
-        <form id="form-cambiar-contrasena" class="form-cambiar-contrasena-grid" onsubmit="cambiarContrasena(event)">
+        <form id="form-cambiar-contrasena" class="form-cambiar-contrasena-grid">
           <div class="form-contrasena-campo">
             <label for="cp-actual">Contraseña actual</label>
             <input type="password" id="cp-actual" placeholder="Tu contraseña actual" autocomplete="current-password" required>
@@ -103,7 +107,7 @@
         <div id="chatbot-turista" class="chatbot">
           <div class="chat-header">
             <h3>Asistente de Cancelación de Reservas</h3>
-            <button onclick="cerrarChatbot()" class="btn-cerrar">✕</button>
+            <button id="btnCerrarChatbotTurista" type="button" class="btn-cerrar">✕</button>
           </div>
           <div id="chat-mensajes-turista" class="chat-mensajes">
             <div class="mensaje bot">
@@ -112,7 +116,7 @@
           </div>
           <div class="chat-input">
             <input type="email" id="email-turista" placeholder="Ingresa tu correo..." />
-            <button onclick="enviarCorreoTurista()" class="btn-enviar">Enviar</button>
+            <button id="btnEnviarCorreoTurista" type="button" class="btn-enviar">Enviar</button>
           </div>
         </div>
       </div>
@@ -132,7 +136,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Confirmar Cancelación de Reserva</h3>
-        <button onclick="cerrarModal('modal-confirmacion')" class="btn-cerrar">✕</button>
+        <button type="button" data-close-modal="modal-confirmacion" class="btn-cerrar">✕</button>
       </div>
       <div class="modal-body">
         <p>Se ha enviado un código de confirmación a tu correo. Por favor, ingrésalo aquí:</p>
@@ -141,8 +145,8 @@
         <p id="motivo-cancelacion-display" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px;"></p>
       </div>
       <div class="modal-footer">
-        <button onclick="cerrarModal('modal-confirmacion')" class="btn-secundario">Cancelar</button>
-        <button onclick="confirmarCodigoTurista()" class="btn-primario">Confirmar Código</button>
+        <button type="button" data-close-modal="modal-confirmacion" class="btn-secundario">Cancelar</button>
+        <button id="btnConfirmarCodigoTurista" type="button" class="btn-primario">Confirmar Código</button>
       </div>
     </div>
   </div>
@@ -152,7 +156,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Editar Perfil</h3>
-        <button onclick="cerrarModal('modal-editar-perfil')" class="btn-cerrar">✕</button>
+        <button type="button" data-close-modal="modal-editar-perfil" class="btn-cerrar">✕</button>
       </div>
       <form id="form-editar-perfil">
         <div class="modal-body">
@@ -174,23 +178,10 @@
           <label for="perfil-direccion">Dirección</label>
           <input type="text" id="perfil-direccion">
 
-          <div class="seccion-contrasena">
-            <h4 class="titulo-seccion-opcional">🔒 Cambiar Contraseña <span class="badge-opcional">Opcional</span></h4>
-
-            <label for="perfil-contrasena-actual">Contraseña Actual</label>
-            <input type="password" id="perfil-contrasena-actual" placeholder="Ingresa tu contraseña actual" autocomplete="current-password">
-
-            <label for="perfil-contrasena-nueva">Nueva Contraseña</label>
-            <input type="password" id="perfil-contrasena-nueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-
-            <label for="perfil-contrasena-confirmar">Confirmar Nueva Contraseña</label>
-            <input type="password" id="perfil-contrasena-confirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password">
-          </div>
-
           <p id="perfil-feedback" class="perfil-feedback" style="display:none;"></p>
         </div>
         <div class="modal-footer">
-          <button type="button" onclick="cerrarModal('modal-editar-perfil')" class="btn-secundario">Cancelar</button>
+          <button type="button" data-close-modal="modal-editar-perfil" class="btn-secundario">Cancelar</button>
           <button type="submit" class="btn-primario">Guardar Cambios</button>
         </div>
       </form>
@@ -202,6 +193,14 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="turista.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+

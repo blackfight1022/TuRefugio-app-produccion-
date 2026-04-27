@@ -12,10 +12,14 @@ const fs = require('fs');
 
 const router = express.Router();
 
-const SECRET = process.env.JWT_SECRET || 'clave_super_segura';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error('[SEGURIDAD] JWT_SECRET no está definido en las variables de entorno.');
+}
 const ADMIN_CODE_TTL_MS = 10 * 60 * 1000;
 const ADMIN_CODE_MAX_ATTEMPTS = 5;
 const adminLoginCodes = new Map();
+const passwordResetCodes = new Map();
 
 // Expresión regular para validar email
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +32,10 @@ function getAdminMailer() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const rawPass = String(process.env.SMTP_PASS || '');
+  const pass = String(host || '').toLowerCase().includes('gmail')
+    ? rawPass.replace(/\s+/g, '')
+    : rawPass.trim();
 
   if (!host || !user || !pass) {
     return null;
@@ -62,6 +69,21 @@ async function enviarCodigoAdminPorCorreo(destinatario, codigo) {
   });
 }
 
+async function enviarCodigoResetPorCorreo(destinatario, codigo) {
+  const mailer = getAdminMailer();
+  if (!mailer) {
+    throw new Error('SMTP no configurado para enviar el código de restablecimiento.');
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  await mailer.sendMail({
+    from,
+    to: destinatario,
+    subject: 'Tu Refugio - Código para restablecer contraseña',
+    text: `Tu código para restablecer contraseña es: ${codigo}. Este código expira en 10 minutos. Si no solicitaste este cambio, ignora este mensaje.`
+  });
+}
+
 function crearTokenSesion(user) {
   return jwt.sign(
     {
@@ -84,6 +106,16 @@ function contraseñaCumpleNivelMinimo(password) {
   if (/[^A-Za-z0-9]/.test(valor)) puntaje += 1;
   if (!/\s/.test(valor)) puntaje += 1;
   return puntaje >= 5;
+}
+
+function contraseñaCumpleReset(password) {
+  const valor = String(password || '');
+  return (
+    valor.length >= 8 &&
+    /[A-Z]/.test(valor) &&
+    /\d/.test(valor) &&
+    /[!@#$%^&*]/.test(valor)
+  );
 }
 
 const documentosDir = path.join(__dirname, '../public/uploads/documentos');
@@ -374,7 +406,9 @@ router.post('/admin/request-code', async (req, res) => {
   }
 
   db.get(
-    `SELECT u.id, u.nombre, u.correo, u.contraseña, u.rol_id, r.nombre AS rol_nombre
+    `SELECT u.id, u.nombre, u.correo, u.contraseña, u.rol_id,
+            COALESCE(u.es_superadmin, 0) AS es_superadmin,
+            r.nombre AS rol_nombre
      FROM usuarios u
      JOIN roles r ON u.rol_id = r.id
      WHERE u.correo = ?`,
@@ -389,8 +423,10 @@ router.post('/admin/request-code', async (req, res) => {
         return res.status(401).json({ error: 'Usuario no encontrado.' });
       }
 
-      if (String(user.rol_nombre || '').toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Esta cuenta no tiene permisos de administrador.' });
+      const esAdmin = String(user.rol_nombre || '').toLowerCase() === 'admin';
+      const esSuperadmin = Number(user.es_superadmin || 0) === 1;
+      if (!esAdmin || !esSuperadmin) {
+        return res.status(403).json({ error: 'Solo el administrador de la plataforma puede iniciar sesión aquí.' });
       }
 
       const match = await bcrypt.compare(contraseña, user.contraseña);
@@ -455,7 +491,9 @@ router.post('/admin/verify-code', (req, res) => {
   }
 
   db.get(
-    `SELECT u.id, u.nombre, u.correo, u.rol_id, r.nombre AS rol_nombre
+    `SELECT u.id, u.nombre, u.correo, u.rol_id,
+            COALESCE(u.es_superadmin, 0) AS es_superadmin,
+            r.nombre AS rol_nombre
      FROM usuarios u
      JOIN roles r ON u.rol_id = r.id
      WHERE u.id = ?`,
@@ -466,9 +504,11 @@ router.post('/admin/verify-code', (req, res) => {
         return res.status(500).json({ error: 'Error validando el usuario administrador.' });
       }
 
-      if (!user || String(user.rol_nombre || '').toLowerCase() !== 'admin') {
+      const esAdmin = String(user?.rol_nombre || '').toLowerCase() === 'admin';
+      const esSuperadmin = Number(user?.es_superadmin || 0) === 1;
+      if (!user || !esAdmin || !esSuperadmin) {
         adminLoginCodes.delete(correo);
-        return res.status(403).json({ error: 'La cuenta ya no tiene permisos de administrador.' });
+        return res.status(403).json({ error: 'Solo el administrador de la plataforma puede iniciar sesión aquí.' });
       }
 
       const token = crearTokenSesion(user);
@@ -481,7 +521,8 @@ router.post('/admin/verify-code', (req, res) => {
           id: user.id,
           nombre: user.nombre,
           correo: user.correo,
-          rol: user.rol_nombre
+          rol: user.rol_nombre,
+          es_superadmin: esSuperadmin ? 1 : 0
         }
       });
     }
@@ -507,6 +548,7 @@ router.post('/login', (req, res) => {
     `SELECT u.id, u.nombre, u.correo, u.contraseña, u.rol_id,
             COALESCE(u.estado_cuenta, 'activo') AS estado_cuenta,
             u.suspension_hasta,
+            COALESCE(u.es_superadmin, 0) AS es_superadmin,
             r.nombre AS rol_nombre
      FROM usuarios u
      JOIN roles r ON u.rol_id = r.id
@@ -529,19 +571,80 @@ router.post('/login', (req, res) => {
         return res.status(401).json({ error: 'Contraseña incorrecta.' });
       }
 
-      const rol = String(user.rol_nombre || '').toLowerCase();
+      let rol = String(user.rol_nombre || '').toLowerCase();
       const estadoCuenta = String(user.estado_cuenta || 'activo').toLowerCase();
       const suspensionHasta = user.suspension_hasta ? new Date(user.suspension_hasta) : null;
       const suspensionVigente = estadoCuenta === 'suspendido' && (!suspensionHasta || suspensionHasta > new Date());
+      let esSuperadmin = Number(user.es_superadmin || 0) === 1;
 
-      // Regla de negocio: un turista o anfitrión suspendido no puede ingresar a su panel.
-      if (suspensionVigente && (rol === 'visitante' || rol === 'anfitrion')) {
+      // Si el usuario es miembro administrador de equipo, aseguramos su acceso al panel de administracion de alojamientos.
+      const membresiaAdminEquipo = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT ea.id
+           FROM equipo_alojamiento ea
+           WHERE ea.id_usuario = ?
+             AND LOWER(COALESCE(ea.rol, '')) = 'administrador'
+             AND COALESCE(ea.estado, '') = 'activo'
+           LIMIT 1`,
+          [user.id],
+          (mErr, row) => mErr ? reject(mErr) : resolve(row)
+        );
+      });
+
+      if (membresiaAdminEquipo && rol !== 'admin') {
+        const rolAdmin = await new Promise((resolve, reject) => {
+          db.get(`SELECT id FROM roles WHERE nombre = 'admin'`, [], (rErr, row) => rErr ? reject(rErr) : resolve(row));
+        });
+
+        if (rolAdmin && rolAdmin.id) {
+          await new Promise((resolve, reject) => {
+            db.run(`UPDATE usuarios SET rol_id = ? WHERE id = ?`, [rolAdmin.id, user.id], (uErr) => uErr ? reject(uErr) : resolve());
+          });
+          rol = 'admin';
+          user.rol_id = rolAdmin.id;
+        }
+
+        // Registrar asignaciones del admin a los anfitriones de sus alojamientos.
+        const anfitrionesRelacionados = await new Promise((resolve, reject) => {
+          db.all(
+            `SELECT DISTINCT a.id_anfitrion
+             FROM equipo_alojamiento ea
+             JOIN alojamientos a ON a.id = ea.id_alojamiento
+             WHERE ea.id_usuario = ?
+               AND LOWER(COALESCE(ea.rol, '')) = 'administrador'
+               AND COALESCE(ea.estado, '') = 'activo'`,
+            [user.id],
+            (aErr, rows) => aErr ? reject(aErr) : resolve(rows || [])
+          );
+        });
+
+        for (const row of anfitrionesRelacionados) {
+          await new Promise((resolve) => {
+            db.run(
+              `INSERT OR IGNORE INTO admin_anfitriones (admin_id, anfitrion_id, asignado_por)
+               VALUES (?, ?, ?)`,
+              [user.id, Number(row.id_anfitrion || 0), user.id],
+              () => resolve()
+            );
+          });
+        }
+      }
+
+      user.rol_nombre = rol;
+
+      // Regla de negocio: visitante suspendido no puede ingresar a su panel.
+      // El anfitrión suspendido sí puede ingresar para gestionar su cuenta.
+      if (suspensionVigente && rol === 'visitante') {
         return res.status(403).json({
           error: 'Tu cuenta está suspendida temporalmente. No puedes ingresar al panel en este momento.'
         });
       }
 
       const token = crearTokenSesion(user);
+
+      const panelDestino = rol === 'admin'
+        ? (esSuperadmin ? '../bienvenido_admin/b_admin.html' : '../bienvenido_admin/admin_alojamientos.html')
+        : (rol === 'anfitrion' ? '../anfitrion/anfitrion.html' : '../turista/turista.html');
 
       return res.json({
         mensaje: 'Inicio de sesión exitoso.',
@@ -550,14 +653,159 @@ router.post('/login', (req, res) => {
           id: user.id,
           nombre: user.nombre,
           correo: user.correo,
-          rol: user.rol_nombre
-        }
+          rol,
+          es_superadmin: esSuperadmin ? 1 : 0,
+          panel_destino: panelDestino
+        },
+        panel_destino: panelDestino
       });
 
     }
   );
 
 });
+
+// ======================================================
+// RESTABLECIMIENTO DE CONTRASENA (UNICO PARA TODOS LOS ROLES)
+// ======================================================
+router.post('/solicitar-reset', (req, res) => {
+  let { email } = req.body || {};
+  email = String(email || '').trim().toLowerCase();
+
+  if (!email) {
+    return res.status(400).json({ error: 'El correo es obligatorio.' });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Correo electronico invalido.' });
+  }
+
+  db.get(
+    'SELECT id FROM usuarios WHERE correo = ?',
+    [email],
+    async (err, user) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error en la base de datos.' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'No existe una cuenta registrada con ese correo.' });
+      }
+
+      const codigo = String(Math.floor(100000 + Math.random() * 900000));
+      const expiracion = Date.now() + (10 * 60 * 1000);
+
+      passwordResetCodes.set(email, {
+        codigo,
+        expiracion,
+        intentosFallidos: 0
+      });
+
+      try {
+        await enviarCodigoResetPorCorreo(email, codigo);
+      } catch (mailErr) {
+        console.error('[reset-password] error enviando correo:', mailErr.message);
+        passwordResetCodes.delete(email);
+        return res.status(500).json({
+          error: 'No se pudo enviar el código al correo. Verifica la configuración SMTP e intenta de nuevo.'
+        });
+      }
+
+      return res.json({
+        mensaje: 'Codigo enviado al correo. Expira en 10 minutos.'
+      });
+    }
+  );
+});
+
+router.post('/verificar-codigo', (req, res) => {
+  let { email, codigo } = req.body || {};
+  email = String(email || '').trim().toLowerCase();
+  codigo = String(codigo || '').trim();
+
+  if (!email || !codigo) {
+    return res.status(400).json({ error: 'Email y codigo son obligatorios.' });
+  }
+
+  const resetData = passwordResetCodes.get(email);
+  if (!resetData) {
+    return res.status(400).json({ error: 'No hay solicitud de restablecimiento activa para ese correo.' });
+  }
+
+  if (Date.now() > Number(resetData.expiracion || 0)) {
+    passwordResetCodes.delete(email);
+    return res.status(400).json({ error: 'El codigo ha expirado. Solicita uno nuevo.' });
+  }
+
+  if (String(resetData.codigo) !== codigo) {
+    resetData.intentosFallidos = Number(resetData.intentosFallidos || 0) + 1;
+
+    if (resetData.intentosFallidos >= 3) {
+      passwordResetCodes.delete(email);
+      return res.status(400).json({ error: 'Demasiados intentos fallidos. Solicita un codigo nuevo.' });
+    }
+
+    return res.status(400).json({ error: 'Codigo incorrecto.' });
+  }
+
+  return res.json({ mensaje: 'Codigo verificado correctamente.' });
+});
+
+const restablecerContrasenaHandler = async (req, res) => {
+  let { email, codigo, nuevaContraseña, nuevaContrasena } = req.body || {};
+  email = String(email || '').trim().toLowerCase();
+  codigo = String(codigo || '').trim();
+  const passwordNueva = String(nuevaContrasena || nuevaContraseña || '');
+
+  if (!email || !codigo || !passwordNueva) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+  }
+
+  if (!contraseñaCumpleReset(passwordNueva)) {
+    return res.status(400).json({
+      error: 'La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial (!@#$%^&*).'
+    });
+  }
+
+  const resetData = passwordResetCodes.get(email);
+  if (!resetData) {
+    return res.status(400).json({ error: 'No hay solicitud de restablecimiento activa para ese correo.' });
+  }
+
+  if (Date.now() > Number(resetData.expiracion || 0)) {
+    passwordResetCodes.delete(email);
+    return res.status(400).json({ error: 'El codigo ha expirado. Solicita uno nuevo.' });
+  }
+
+  if (String(resetData.codigo) !== codigo) {
+    return res.status(400).json({ error: 'Codigo de verificacion invalido.' });
+  }
+
+  try {
+    const hash = await bcrypt.hash(passwordNueva, 10);
+
+    db.run(
+      'UPDATE usuarios SET contraseña = ? WHERE correo = ?',
+      [hash, email],
+      function (err) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
+        }
+
+        passwordResetCodes.delete(email);
+        return res.json({ mensaje: 'Contraseña restablecida correctamente.' });
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'Error al procesar la solicitud.' });
+  }
+};
+
+router.post('/restablecer-contrasena', restablecerContrasenaHandler);
+router.post('/restablecer-contraseña', restablecerContrasenaHandler);
 
 
 // ======================================================
@@ -624,12 +872,12 @@ router.put('/me', verificarToken, async (req, res) => {
     }
     try {
       const row = await new Promise((resolve, reject) => {
-        db.get('SELECT contrasena FROM usuarios WHERE id = ?', [req.user.id], (err, r) => {
+        db.get('SELECT contraseña AS contrasena_hash FROM usuarios WHERE id = ?', [req.user.id], (err, r) => {
           if (err) reject(err); else resolve(r);
         });
       });
       if (!row) return res.status(404).json({ error: 'Usuario no encontrado.' });
-      const coincide = await bcrypt.compare(String(contrasena_actual), row.contrasena);
+      const coincide = await bcrypt.compare(String(contrasena_actual), row.contrasena_hash);
       if (!coincide) {
         return res.status(400).json({ error: 'La contraseña actual es incorrecta.' });
       }
@@ -641,7 +889,7 @@ router.put('/me', verificarToken, async (req, res) => {
   }
 
   const sql = hashedNueva
-    ? `UPDATE usuarios SET nombre = ?, telefono = ?, direccion = ?, tipo_documento = ?, numero_documento = ?, contrasena = ? WHERE id = ?`
+    ? `UPDATE usuarios SET nombre = ?, telefono = ?, direccion = ?, tipo_documento = ?, numero_documento = ?, contraseña = ? WHERE id = ?`
     : `UPDATE usuarios SET nombre = ?, telefono = ?, direccion = ?, tipo_documento = ?, numero_documento = ? WHERE id = ?`;
 
   const params = hashedNueva

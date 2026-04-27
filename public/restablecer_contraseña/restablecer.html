@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <title>Restablecer Contraseña - Tu Refugio</title>
+  <link rel="stylesheet" href="restablecer.css" />
+  <link rel="stylesheet" href="/global.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div class="reset-container">
+    <div class="reset-card">
+      <!-- PASO 1: SOLICITAR EMAIL -->
+      <div id="paso1" class="paso-container active">
+        <div class="reset-header">
+          <h2>Restablecer Contraseña</h2>
+          <p>Ingresa tu correo electrónico para recibir un código de verificación</p>
+        </div>
+
+        <form id="formPaso1" class="reset-form">
+          <label for="email">Correo Electrónico</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            placeholder="tu@correo.com"
+            required 
+          />
+          <button type="submit" class="btn-principal">Enviar Código</button>
+        </form>
+
+        <div class="reset-footer">
+          <p>¿Recordaste tu contraseña? <a href="#" id="btnVolverLoginReset">Volver al Login</a></p>
+        </div>
+      </div>
+
+      <!-- PASO 2: VERIFICAR CÓDIGO -->
+      <div id="paso2" class="paso-container">
+        <div class="reset-header">
+          <h2>Verificar Código</h2>
+          <p>Ingresa el código que enviamos a tu correo</p>
+        </div>
+
+        <form id="formPaso2" class="reset-form">
+          <label for="codigo">Código de Verificación</label>
+          <input 
+            type="text" 
+            id="codigo" 
+            name="codigo" 
+            placeholder="Ingresa el código (6 dígitos)"
+            maxlength="6"
+            required 
+          />
+          <button type="submit" class="btn-principal">Verificar Código</button>
+          <button type="button" id="btnVolverPaso1" class="btn-secondary">Atrás</button>
+        </form>
+
+        <div class="reset-footer">
+          <p id="tiempoExpiracion"></p>
+        </div>
+      </div>
+
+      <!-- PASO 3: NUEVA CONTRASEÑA -->
+      <div id="paso3" class="paso-container">
+        <div class="reset-header">
+          <h2>Nueva Contraseña</h2>
+          <p>Crea una nueva contraseña segura</p>
+        </div>
+
+        <form id="formPaso3" class="reset-form">
+          <label for="nuevaPassword">Nueva Contraseña</label>
+          <input 
+            type="password" 
+            id="nuevaPassword" 
+            name="nuevaPassword" 
+            placeholder="Mínimo 8 caracteres"
+            minlength="8"
+            required 
+          />
+
+          <label for="confirmarPassword">Confirmar Contraseña</label>
+          <input 
+            type="password" 
+            id="confirmarPassword" 
+            name="confirmarPassword" 
+            placeholder="Repite tu contraseña"
+            minlength="8"
+            required 
+          />
+
+          <div class="password-requirements">
+            <p><strong>Requisitos de contraseña:</strong></p>
+            <ul>
+              <li id="reqLongitud" class="req-item">Mínimo 8 caracteres</li>
+              <li id="reqMayuscula" class="req-item">Al menos una mayúscula</li>
+              <li id="reqNumero" class="req-item">Al menos un número</li>
+              <li id="reqEspecial" class="req-item">Al menos un carácter especial (!@#$%^&*)</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="btn-principal">Restablecer Contraseña</button>
+        </form>
+      </div>
+
+      <!-- PASO 4: ÉXITO -->
+      <div id="paso4" class="paso-container">
+        <div class="reset-header success">
+          <h2>✓ Éxito</h2>
+          <p>Tu contraseña ha sido restablecida correctamente</p>
+        </div>
+        <button id="btnIrLoginReset" type="button" class="btn-principal">Ir al Login</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="restablecer.js"></script>
+</body>
+</html>

@@ -2,12 +2,19 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Panel del Anfitrión - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Panel del Anfitrión - Tu Refugio</title>
   <link rel="stylesheet" href="anfitrion.css" />
+  <link rel="stylesheet" href="/css/panel-chat.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="/global.css" />
 </head>
 <body>
   <!-- HEADER -->
@@ -27,10 +34,12 @@
             <li><a href="#buscarHabitaciones">Buscar Habitaciones</a></li>
             <li><a href="#serviciosAdicionales">Servicios Adicionales</a></li>
             <li><a href="#lista">Mis Alojamientos</a></li>
+            <li><a href="#campanasAlojamiento">Campañas</a></li>
             <li><a href="#cancelacionesAnfitrion">Solicitudes de Cancelacion</a></li>
             <li><a href="#estadisticas">Estadísticas</a></li>
             <li><a href="#galeriaAlojamientos">Galería de Alojamientos</a></li>
-            <li><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+            <li><a href="#equipoAlojamiento">Equipo del Alojamiento</a></li>
+            <li><a href="#" id="btnCerrarSesionAnfitrion">Cerrar Sesión</a></li>
           </ul>
         </li>
       </ul>
@@ -39,13 +48,50 @@
 
   <!-- MAIN -->
   <main class="container">
+    <section class="card panel-workflow" id="flujoTrabajo">
+      <div class="workflow-head">
+        <div>
+          <h3>🧭 Flujo de trabajo del anfitrión</h3>
+          <p class="workflow-sub">Usa este orden para gestionar tu operación diaria sin perderte entre secciones.</p>
+        </div>
+        <span class="workflow-pill">Panel operativo</span>
+      </div>
+
+      <div class="workflow-steps" aria-label="Pasos recomendados">
+        <a href="#tituloCrear" class="workflow-step">
+          <span class="step-number">1</span>
+          <span class="step-text">Crear o editar alojamiento</span>
+        </a>
+        <a href="#habitaciones" class="workflow-step">
+          <span class="step-number">2</span>
+          <span class="step-text">Configurar habitaciones</span>
+        </a>
+        <a href="#serviciosAdicionales" class="workflow-step">
+          <span class="step-number">3</span>
+          <span class="step-text">Definir servicios adicionales</span>
+        </a>
+        <a href="#buscarHabitaciones" class="workflow-step">
+          <span class="step-number">4</span>
+          <span class="step-text">Revisar estados y disponibilidad</span>
+        </a>
+        <a href="#campanasAlojamiento" class="workflow-step">
+          <span class="step-number">5</span>
+          <span class="step-text">Enviar campañas a turistas</span>
+        </a>
+        <a href="#cancelacionesAnfitrion" class="workflow-step">
+          <span class="step-number">6</span>
+          <span class="step-text">Gestionar cancelaciones y soporte</span>
+        </a>
+      </div>
+    </section>
+
     <!-- CREAR ALOJAMIENTO -->
     <section id="crear" class="card">
       <button type="button" class="toggle-btn" id="toggleCrear">
         <h3 id="tituloCrear">➕ Crear Alojamiento</h3>
       </button>
       <div id="formContainer" class="form-container collapsed">
-        <form id="formAlojamiento" onsubmit="event.preventDefault(); crearAlojamiento();">
+        <form id="formAlojamiento">
 
         <!-- INFORMACIÓN BÁSICA -->
         <div class="form-section">
@@ -94,7 +140,7 @@
             <input id="direccion" type="text" placeholder="Ej: Calle 123 #45-67" />
           </div>
 
-          <button type="button" class="btn-geo" onclick="obtenerUbicacionGPS()">📍 Cargar ubicación con GPS (opcional)</button>
+          <button type="button" id="btnObtenerUbicacionGPS" class="btn-geo">📍 Cargar ubicación con GPS (opcional)</button>
           <input type="hidden" id="gpsUbicacion" />
           <div id="avisoUbicacion" style="font-size:0.9rem; margin-top:6px;"></div>
 
@@ -152,7 +198,7 @@
         <!-- CREAR HABITACIÓN -->
         <div class="form-section">
           <h4>➕ Crear Habitación</h4>
-          <form onsubmit="event.preventDefault(); crearHabitacion();">
+          <form id="formCrearHabitacion">
             <div class="form-group">
               <label for="hab_alojamientoId">ID del alojamiento *</label>
               <input id="hab_alojamientoId" type="number" placeholder="Ej: 1" min="1" required />
@@ -184,7 +230,7 @@
       </button>
       <div id="formContainerServiciosAdicionales" class="form-container collapsed">
       <div class="form-section">
-        <form onsubmit="event.preventDefault(); guardarServicioAdicional();">
+        <form id="formServicioAdicional">
           <div class="form-row">
             <div class="form-group">
               <label for="sa_alojamientoId">ID del alojamiento *</label>
@@ -225,8 +271,8 @@
         <div class="form-group" style="margin-top:16px;">
           <label for="sa_buscarAlojamiento">Ver servicios de alojamiento</label>
           <div class="search-row">
-            <input id="sa_buscarAlojamiento" type="number" min="1" placeholder="Ej: 2" onkeydown="if(event.key==='Enter'){event.preventDefault(); cargarServiciosAdicionales();}">
-            <button type="button" class="btn-buscar" onclick="cargarServiciosAdicionales()">🔎 Cargar</button>
+            <input id="sa_buscarAlojamiento" type="number" min="1" placeholder="Ej: 2">
+            <button type="button" id="btnCargarServiciosAdicionales" class="btn-buscar">🔎 Cargar</button>
           </div>
         </div>
 
@@ -242,9 +288,36 @@
         <div class="form-group">
           <label for="buscarAlojamiento">ID del alojamiento</label>
           <div class="search-row">
-            <input id="buscarAlojamiento" type="number" placeholder="Ej: 1" min="1" onkeydown="if(event.key==='Enter'){event.preventDefault(); cargarHabitaciones();}" />
-            <button type="button" onclick="cargarHabitaciones()" class="btn-buscar">🔎 Buscar</button>
+            <input id="buscarAlojamiento" type="number" placeholder="Ej: 1" min="1" />
+            <button type="button" id="btnBuscarHabitaciones" class="btn-buscar">🔎 Buscar</button>
           </div>
+        </div>
+        <!-- Filtros de habitaciones -->
+        <div id="filtrosHabitaciones" style="display:none; margin:16px 0 8px;">
+          <p style="font-size:.8rem; color:#7A8EA3; margin-bottom:8px;">Filtrar por estado:</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="filtro-hab-btn filtro-hab-activo" data-filtro="todos"
+              style="padding:7px 14px; border-radius:9999px; border:1.5px solid #007B8A; background:#007B8A; color:#fff; font-size:.82rem; cursor:pointer; font-weight:600; transition:.2s;">
+              📋 Todos
+            </button>
+            <button type="button" class="filtro-hab-btn" data-filtro="disponible"
+              style="padding:7px 14px; border-radius:9999px; border:1.5px solid #4caf50; background:transparent; color:#4caf50; font-size:.82rem; cursor:pointer; font-weight:600; transition:.2s;">
+              🟢 Disponible
+            </button>
+            <button type="button" class="filtro-hab-btn" data-filtro="ocupada"
+              style="padding:7px 14px; border-radius:9999px; border:1.5px solid #f44336; background:transparent; color:#f44336; font-size:.82rem; cursor:pointer; font-weight:600; transition:.2s;">
+              🔴 No disponible
+            </button>
+            <button type="button" class="filtro-hab-btn" data-filtro="mantenimiento"
+              style="padding:7px 14px; border-radius:9999px; border:1.5px solid #ff9800; background:transparent; color:#ff9800; font-size:.82rem; cursor:pointer; font-weight:600; transition:.2s;">
+              🛠 Mantenimiento
+            </button>
+            <button type="button" class="filtro-hab-btn" data-filtro="limpieza"
+              style="padding:7px 14px; border-radius:9999px; border:1.5px solid #1e88e5; background:transparent; color:#1e88e5; font-size:.82rem; cursor:pointer; font-weight:600; transition:.2s;">
+              🧹 Limpieza
+            </button>
+          </div>
+          <p id="filtroHabConteo" style="font-size:.78rem; color:#7A8EA3; margin-top:8px;"></p>
         </div>
         <div id="listaHabitaciones" class="cards"></div>
       </div>
@@ -258,27 +331,181 @@
   <div id="listaAlojamientos" class="cards"></div>
 </section>
 
+<!-- CAMPAÑAS -->
+<section id="campanasAlojamiento" class="card">
+  <button type="button" class="toggle-btn collapsed" id="toggleCampanas">
+    <h3>📣 Campañas para Turistas</h3>
+  </button>
+  <div id="formContainerCampanas" class="form-container collapsed">
+  <p class="campanas-subtitulo">Envía promociones a turistas que ya reservaron en uno de tus alojamientos.</p>
+
+  <div class="campanas-card">
+    <form id="formCampanaAlojamiento">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="campana_alojamiento_id">Alojamiento *</label>
+          <select id="campana_alojamiento_id" required>
+            <option value="">Selecciona un alojamiento</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="campana_asunto">Asunto del correo *</label>
+          <input id="campana_asunto" type="text" maxlength="120" placeholder="Ej: Promo de mitad de año" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="campana_contenido">Mensaje de campaña *</label>
+        <textarea id="campana_contenido" rows="4" maxlength="1200" placeholder="Cuéntale al turista la promoción, beneficios o novedades..." required></textarea>
+      </div>
+
+      <div class="form-row campana-opciones-envio">
+        <label class="campana-radio-option">
+          <input type="radio" name="campana_tipo_envio" value="inmediata" checked />
+          <span>⚡ Enviar ahora</span>
+        </label>
+        <label class="campana-radio-option">
+          <input type="radio" name="campana_tipo_envio" value="programada" />
+          <span>🗓️ Enviar programado</span>
+        </label>
+      </div>
+
+      <div class="form-group" id="campana_fecha_group" style="display:none;">
+        <label for="campana_fecha_programada">Fecha y hora de envío *</label>
+        <p id="campana_fecha_estado" style="margin:0 0 8px 0;color:#0d47a1;"><small>Notificación: define la fecha exacta para lanzar la campaña y establece la fecha con el botón.</small></p>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button type="button" id="btnGuardarCalendarioCampana" style="border:1px solid #1e88e5;background:#1e88e5;color:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Establecer fecha y hora</button>
+          <input id="campana_fecha_programada" type="datetime-local" style="padding:6px 8px;border:1px solid #90caf9;border-radius:6px;" />
+        </div>
+      </div>
+
+      <div class="campana-link-preview" id="campana_link_preview">Selecciona un alojamiento para generar el enlace del correo.</div>
+      <div id="campana_feedback" class="campana-feedback" aria-live="polite"></div>
+
+      <button type="submit" class="btn-campana-enviar">🚀 Lanzar campaña</button>
+    </form>
+  </div>
+
+  <div class="campanas-historial">
+    <div class="campanas-historial-header">
+      <h4>Últimas campañas</h4>
+      <div class="campanas-acciones-header">
+        <button type="button" id="btnDescargarCampanasPdf" class="btn-buscar">📄 Descargar PDF</button>
+        <button type="button" id="btnRefrescarCampanas" class="btn-buscar">🔄 Actualizar</button>
+      </div>
+    </div>
+    <div class="campanas-resumen" id="campanas_resumen">
+      <div class="campanas-resumen-item">
+        <span class="campanas-resumen-valor" id="campanas_hoy_val">0</span>
+        <span class="campanas-resumen-label">Hoy</span>
+      </div>
+      <div class="campanas-resumen-item">
+        <span class="campanas-resumen-valor" id="campanas_proximas_val">0</span>
+        <span class="campanas-resumen-label">Próximas</span>
+      </div>
+      <div class="campanas-resumen-item">
+        <span class="campanas-resumen-valor" id="campanas_finalizadas_val">0</span>
+        <span class="campanas-resumen-label">Finalizadas</span>
+      </div>
+    </div>
+    <div id="campanas_historial" class="cards"></div>
+  </div>
+  </div>
+</section>
+
 
         <!-- SOLICITUDES DE CANCELACION -->
         <section id="cancelacionesAnfitrion" class="card">
           <h3>💬 Solicitudes de Cancelacion (Chatbot Turista)</h3>
           <p style="margin: 8px 0 14px 0; color: #b0bec5;">Aqui veras las solicitudes confirmadas por codigo desde el panel del turista. Puedes definir porcentaje de devolucion y motivo.</p>
-          <button type="button" class="btn-buscar" onclick="cargarSolicitudesCancelacionAnfitrion()">🔄 Actualizar solicitudes</button>
+          <button type="button" id="btnActualizarCancelacionesAnfitrion" class="btn-buscar">🔄 Actualizar solicitudes</button>
           <div id="listaCancelacionesPendientes" class="cards" style="margin-top: 16px;"></div>
+        </section>
+
+        <section id="codigoReservaConfirmacion" class="card">
+          <h3>🔐 Validar Código de Confirmación de Reserva</h3>
+          <p style="margin: 8px 0 14px 0; color: #b0bec5;">Ingresa el código único enviado al turista por correo al momento de reservar. El código se usa una sola vez y luego se quema.</p>
+
+          <div class="codigo-confirmacion-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="codigoReservaInput">Código de confirmación</label>
+              <input id="codigoReservaInput" type="text" maxlength="32" placeholder="Ej: RV-123456-A1B2C3" autocomplete="off" />
+            </div>
+            <div class="codigo-confirmacion-acciones">
+              <button type="button" id="btnValidarCodigoReserva" class="btn-buscar">✅ Validar código</button>
+              <button type="button" id="btnLimpiarCodigoReserva" class="btn-buscar">🧹 Limpiar</button>
+            </div>
+          </div>
+
+          <div id="resultadoCodigoReserva" class="codigo-confirmacion-resultado" style="margin-top: 16px;"></div>
         </section>
 
 
 
     <!-- ESTADÍSTICAS -->
     <section id="estadisticas" class="estadisticas card">
-      <h3>📊 Ocupación Semanal (%)</h3>
-      <canvas id="graficaOcupacion"></canvas>
+      <div class="grafica-header">
+        <div>
+          <h3>📊 Ocupación Semanal</h3>
+          <p class="grafica-subtitulo">% de habitaciones ocupadas por día (últimos 7 días)</p>
+        </div>
+        <span id="grafica-badge" class="grafica-badge">—</span>
+      </div>
+      <div class="grafica-stats">
+        <div class="grafica-stat-item">
+          <span class="gstat-valor" id="gstat-promedio-val">—</span>
+          <span class="gstat-label">Promedio</span>
+        </div>
+        <div class="grafica-stat-item">
+          <span class="gstat-valor" id="gstat-maximo-val">—</span>
+          <span class="gstat-label">Máximo</span>
+        </div>
+        <div class="grafica-stat-item">
+          <span class="gstat-valor" id="gstat-minimo-val">—</span>
+          <span class="gstat-label">Mínimo</span>
+        </div>
+        <div class="grafica-stat-item">
+          <span class="gstat-valor" id="gstat-tendencia-val">—</span>
+          <span class="gstat-label">Tendencia</span>
+        </div>
+      </div>
+      <div class="grafica-wrapper">
+        <canvas id="graficaOcupacion"></canvas>
+        <div id="grafica-vacia" style="display:none;" class="grafica-vacia">
+          <span>📭</span>
+          <p>No hay datos de ocupación para este alojamiento aún.</p>
+        </div>
+      </div>
     </section>
 
 <!-- GALERÍA -->
 <section id="galeriaAlojamientos" class="collage card">
   <h3>🖼️ Galería de Alojamientos</h3>
   <div id="galeria-alojamientos" class="grid-galeria"></div>
+</section>
+
+
+<!-- EQUIPO DEL ALOJAMIENTO -->
+<section id="equipoAlojamiento" class="card">
+  <button type="button" class="toggle-btn" id="toggleEquipo">
+    <h3>👥 Equipo del Alojamiento</h3>
+  </button>
+  <div id="formContainerEquipo" class="form-container collapsed">
+    <div class="form-section">
+      <div class="form-row" style="align-items:center; margin-bottom:12px;">
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+          <label>Asignación de administrador por anfitrión</label>
+          <div style="font-size:0.9rem;color:#666;">El administrador invitado podrá gestionar todos tus alojamientos.</div>
+        </div>
+        <div style="margin-left:12px; align-self:flex-end;">
+          <button type="button" id="btnAbrirInvitar" class="btn-buscar" style="display:inline-block;">
+            ➕ Invitar miembro
+          </button>
+        </div>
+      </div>
+      <div id="listaEquipo" class="cards"></div>
+    </div>
+  </div>
 </section>
 
   </main>
@@ -302,8 +529,8 @@
   ">
     <video id="videoCamara" autoplay playsinline style="width:90%; max-width:400px; border-radius:10px;"></video>
     <div style="margin-top:10px;">
-      <button onclick="tomarFoto()">📸 Capturar</button>
-      <button onclick="cerrarCamara()">❌ Cerrar</button>
+      <button type="button" id="btnTomarFotoCamara">📸 Capturar</button>
+      <button type="button" id="btnCerrarCamara">❌ Cerrar</button>
     </div>
   </div>
 <!-- ===============================
@@ -317,7 +544,7 @@ MODAL SELECCIÓN DE SERVICIOS
 
     <div class="modal-botones">
       <button id="btnGuardarServicios" type="button">✅ Guardar</button>
-      <button type="button" onclick="cerrarModalServicios()">❌Cancelar</button>
+      <button type="button" id="btnCerrarModalServicios">❌Cancelar</button>
     </div>
   </div>
 </div>
@@ -328,13 +555,42 @@ MODAL SELECCIÓN DE SERVICIOS
     <form id="formEliminarServicios"></form>
     <div class="modal-botones">
       <button id="btnEliminarServicios">🗑️ Eliminar seleccionados</button>
-      <button onclick="cerrarModalEliminarServicios()">❌Cancelar</button>
+      <button type="button" id="btnCerrarModalEliminarServicios">❌Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INVITAR MIEMBRO -->
+<div id="modalInvitarMiembro" class="modal" style="display:none;">
+  <div class="modal-contenido">
+    <h3>➕ Invitar miembro al equipo</h3>
+    <div class="form-group">
+      <label for="invitar_correo">Correo electrónico *</label>
+      <input id="invitar_correo" type="email" placeholder="ejemplo@correo.com" />
+    </div>
+    <div class="form-group">
+      <label for="invitar_rol">Rol</label>
+      <select id="invitar_rol">
+        <option value="administrador">Administrador</option>
+      </select>
+    </div>
+    <div class="modal-botones">
+      <button type="button" id="btnEnviarInvitacion">✅ Enviar invitación</button>
+      <button type="button" id="btnCerrarModalInvitar">❌ Cancelar</button>
     </div>
   </div>
 </div>
 
 <!-- SCRIPT -->
+  <button class="tr-chatbot-launcher" type="button" aria-label="Abrir asistente Tu Refugio">💬</button>
   <script src="anfitrion.js"></script>
+  <script src="/js/panel-chat.js"></script>
 
 </body>
 </html>
+
+
+
+
+
+

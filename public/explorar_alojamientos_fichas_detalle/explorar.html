@@ -2,10 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Explorar Alojamientos - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Explorar Alojamientos - Tu Refugio</title>
   <link rel="stylesheet" href="explorar.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/global.css" />
+  <link rel="stylesheet" href="/css/chatbot-float.css" />
 </head>
 <body>
   <header>
@@ -39,68 +44,114 @@
   <main>
     <div class="explorar-layout">
     <section class="formulario">
-      <h1>Explorar Alojamientos</h1>
-      
+      <div class="formulario-header">
+        <h1>Explorar</h1>
+        <span class="formulario-badge">Filtros</span>
+      </div>
+
       <!-- FILTROS AVANZADOS -->
       <div class="filtros-container">
-        <h3>🔍 Filtros Avanzados</h3>
-        <div class="filtros-grid">
-          <div class="filtro-item">
-            <label for="filtro-precio-min">💰 Precio mínimo:</label>
-            <input type="number" id="filtro-precio-min" placeholder="Desde $" min="0">
-          </div>
 
-          <div class="filtro-item">
-            <label for="filtro-precio-max">💰 Precio máximo:</label>
-            <input type="number" id="filtro-precio-max" placeholder="Hasta $" min="0">
+        <!-- Precio -->
+        <div class="filtro-grupo">
+          <div class="filtro-grupo-titulo">
+            <span class="filtro-icono">💰</span>
+            <span>Precio por noche</span>
           </div>
-
-          <div class="filtro-item">
-            <label for="filtro-servicios">🛎️ Servicios:</label>
-            <input type="text" id="filtro-servicios" placeholder="Ej: wifi, piscina">
-          </div>
-
-          <div class="filtro-item">
-            <label for="filtro-ubicacion">📍 Ubicación:</label>
-            <input type="text" id="filtro-ubicacion" placeholder="Ciudad o región">
-          </div>
-
-          <div class="filtro-item">
-            <label for="filtro-zona">🏞️ Zona:</label>
-            <select id="filtro-zona">
-              <option value="">Todas</option>
-              <option value="rural">Rural</option>
-              <option value="residencial">Residencial</option>
-              <option value="urbana">Urbana</option>
-              <option value="comercial">Comercial</option>
-              <option value="industrial">Industrial</option>
-            </select>
-          </div>
-
-          <div class="filtro-item">
-            <label for="filtro-cercania">🚶 Cercanía:</label>
-            <input type="text" id="filtro-cercania" placeholder="Ej: cerca a playa, centro">
-          </div>
-
-          <div class="filtro-item">
-            <label for="filtro-vistas">👀 Vistas:</label>
-            <select id="filtro-vistas">
-              <option value="">Todas</option>
-              <option value="mar">Mar</option>
-              <option value="montaña">Montaña</option>
-              <option value="ciudad">Ciudad</option>
-              <option value="jardín">Jardín</option>
-              <option value="ninguna">Ninguna</option>
-            </select>
-          </div>
-
-          <div class="filtro-item">
-            <label for="filtro-calificacion">⭐ Calificación mínima:</label>
-            <input type="number" id="filtro-calificacion" placeholder="Min. estrellas" min="1" max="5" step="0.1">
+          <div class="filtro-precio-wrap">
+            <div class="filtro-precio-campo">
+              <label for="filtro-precio-min">Mínimo</label>
+              <div class="filtro-input-prefix">
+                <span>$</span>
+                <input type="text" id="filtro-precio-min" placeholder="Ej: 120000" inputmode="numeric" autocomplete="off" pattern="[0-9.,\s]*">
+              </div>
+            </div>
+            <div class="filtro-precio-sep">—</div>
+            <div class="filtro-precio-campo">
+              <label for="filtro-precio-max">Máximo</label>
+              <div class="filtro-input-prefix">
+                <span>$</span>
+                <input type="text" id="filtro-precio-max" placeholder="Ej: 950 mil" inputmode="numeric" autocomplete="off" pattern="[0-9.,\s]*">
+              </div>
+            </div>
           </div>
         </div>
-        <button id="btnFiltrar" class="btn-filtrar">🔎 Aplicar Filtros</button>
-        <button id="btnLimpiar" class="btn-limpiar">🔄 Limpiar Filtros</button>
+
+        <!-- Ubicación -->
+        <div class="filtro-grupo">
+          <div class="filtro-grupo-titulo">
+            <span class="filtro-icono">📍</span>
+            <span>Ubicación</span>
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-ubicacion">Ciudad o región</label>
+            <input type="text" id="filtro-ubicacion" placeholder="Ej: Bogotá, Cartagena…">
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-zona">Tipo de zona</label>
+            <select id="filtro-zona">
+              <option value="">Todas las zonas</option>
+              <option value="rural">🌿 Rural</option>
+              <option value="residencial">🏡 Residencial</option>
+              <option value="urbana">🏙️ Urbana</option>
+              <option value="comercial">🏪 Comercial</option>
+              <option value="industrial">🏭 Industrial</option>
+            </select>
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-cercania">Cercanía</label>
+            <input type="text" id="filtro-cercania" placeholder="Ej: playa, centro, montaña…">
+          </div>
+        </div>
+
+        <!-- Ambiente -->
+        <div class="filtro-grupo">
+          <div class="filtro-grupo-titulo">
+            <span class="filtro-icono">🌄</span>
+            <span>Ambiente</span>
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-vistas">Vistas</label>
+            <select id="filtro-vistas">
+              <option value="">Cualquier vista</option>
+              <option value="mar">🌊 Mar</option>
+              <option value="montaña">⛰️ Montaña</option>
+              <option value="ciudad">🏙️ Ciudad</option>
+              <option value="jardín">🌻 Jardín</option>
+              <option value="ninguna">— Ninguna</option>
+            </select>
+          </div>
+          <div class="filtro-item">
+            <label for="filtro-servicios">Servicios incluidos</label>
+            <input type="text" id="filtro-servicios" placeholder="Ej: wifi, piscina, gym…">
+          </div>
+        </div>
+
+        <!-- Calificación -->
+        <div class="filtro-grupo">
+          <div class="filtro-grupo-titulo">
+            <span class="filtro-icono">⭐</span>
+            <span>Calificación mínima</span>
+          </div>
+          <div class="filtro-estrellas-wrap">
+            <div class="filtro-estrellas" id="filtroEstrellas">
+              <button type="button" class="estrella" data-val="1" title="1 estrella">★</button>
+              <button type="button" class="estrella" data-val="2" title="2 estrellas">★</button>
+              <button type="button" class="estrella" data-val="3" title="3 estrellas">★</button>
+              <button type="button" class="estrella" data-val="4" title="4 estrellas">★</button>
+              <button type="button" class="estrella" data-val="5" title="5 estrellas">★</button>
+            </div>
+            <span class="filtro-estrellas-label" id="filtroEstrellasLabel">Cualquiera</span>
+          </div>
+          <!-- input oculto que el JS ya lee -->
+          <input type="hidden" id="filtro-calificacion" value="">
+        </div>
+
+        <!-- Acciones -->
+        <div class="filtro-acciones">
+          <button id="btnFiltrar" class="btn-filtrar">🔍 Aplicar filtros</button>
+          <button id="btnLimpiar" class="btn-limpiar">↺ Limpiar</button>
+        </div>
       </div>
     </section>
 
@@ -125,6 +176,14 @@
 
 
 <script src="explorar.js"></script>
+<script src="/js/chatbot-float.js"></script>
 
 </body>
 </html>
+
+
+
+
+
+
+

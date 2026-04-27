@@ -2,12 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Registro Anfitrion - Tu Refugio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<title>Registro Anfitrion - Tu Refugio</title>
   <link rel="stylesheet" href="anfitrion.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="../js/email-validator.js"></script>
+  <link rel="stylesheet" href="/global.css" />
 </head>
 <body>
   <header>
@@ -105,6 +109,28 @@
 
         <div id="estadoDocumentos" class="estado-documentos">Aún no se han validado los documentos cargados.</div>
 
+        <div class="checklist-terminos" id="checklistTerminos">
+          <h3>Checklist previo al registro</h3>
+          <ul>
+            <li>Confirmo que la información y documentos cargados son reales y vigentes.</li>
+            <li>Acepto cumplir las políticas de publicación y atención a huéspedes de Tu Refugio.</li>
+            <li>Autorizo la validación documental para aprobación de mi cuenta de anfitrión.</li>
+          </ul>
+
+          <label class="aceptacion-terminos" for="aceptaTyC">
+            <input type="checkbox" id="aceptaTyC" name="aceptaTyC" required>
+            <span>Acepto los términos y condiciones de la plataforma.</span>
+          </label>
+
+          <details class="detalle-terminos">
+            <summary>Ver términos y condiciones (resumen)</summary>
+            <p>
+              Al registrarte como anfitrión declaras que la información proporcionada es veraz, te comprometes a mantener una conducta responsable con los huéspedes,
+              y aceptas que Tu Refugio podrá suspender publicaciones o cuentas ante incumplimientos de las políticas internas, fraude documental o afectaciones a la seguridad de la plataforma.
+            </p>
+          </details>
+        </div>
+
         <button type="submit">Registrarse</button>
       </form>
       <p>¿Ya tienes cuenta? <a href="../login/login.html">Inicia sesión</a></p>
@@ -128,6 +154,7 @@
     const numeroDocumentoInput = document.getElementById('numero_documento');
     const nitEmpresaInput = document.getElementById('nit_empresa');
     const razonSocialInput = document.getElementById('razon_social');
+    const aceptaTyCInput = document.getElementById('aceptaTyC');
 
     function obtenerTipoPersona() {
       return document.querySelector('input[name="tipo_persona"]:checked')?.value || 'natural';
@@ -279,6 +306,15 @@
         return;
       }
 
+      if (!aceptaTyCInput.checked) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Aceptación requerida',
+          text: 'Debes aceptar los términos y condiciones para completar el registro de anfitrión.'
+        });
+        return;
+      }
+
       const tipoPersona = obtenerTipoPersona();
       const erroresDocumentales = await validarDocumentosFormulario();
       if (erroresDocumentales.length) {
@@ -326,3 +362,10 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+

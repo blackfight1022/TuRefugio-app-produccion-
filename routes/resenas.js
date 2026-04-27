@@ -160,10 +160,12 @@ router.get('/alojamiento/:id', (req, res) => {
         r.calificacion,
         r.comentario,
         u.nombre AS usuario,
+        u.correo AS correo_usuario,
         r.fecha
      FROM reseñas r
      JOIN usuarios u ON r.id_usuario = u.id
-     WHERE r.id_alojamiento = ?`,
+     WHERE r.id_alojamiento = ?
+     ORDER BY datetime(r.fecha) DESC, r.id DESC`,
     [req.params.id],
     (err, rows) => {
 
